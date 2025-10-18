@@ -374,7 +374,7 @@
         <rule scalemaxdenom="25001" scalemindenom="10000" key="{48d43cb1-787b-480a-bff4-e10d3f62e2c6}" symbol="180" label="track 10000 - 25000"/>
         <rule scalemaxdenom="50001" scalemindenom="25001" key="{3eb693c9-1fc6-49d1-8daa-53b24f62a682}" symbol="181" label="track 10000 - 25000"/>
       </rule>
-      <rule key="{acce7239-8f8d-4336-a345-7bc579ddb735}" filter="&quot;fclass&quot; IN ('footway','cycleway','path','pedestrian','unknown', 'bridleway', 'steps') AND &quot;tunnel&quot; IN ('F', 'no', 'False') AND &quot;bridge&quot; IN ('F', 'no', 'False')" label="paths">
+      <rule key="{acce7239-8f8d-4336-a345-7bc579ddb735}" filter="&quot;fclass&quot; IN ('footway','cycleway','path','pedestrian','unknown', 'bridleway', 'steps') AND (&quot;tunnel&quot; = false) AND (&quot;bridge&quot; =  false)" label="paths">
         <rule scalemaxdenom="500" scalemindenom="1" key="{4f83537d-af80-4594-a64f-5a66bc7f3065}" symbol="182" label="path 0 - 500"/>
         <rule scalemaxdenom="1000" scalemindenom="500" key="{eb821167-4de3-495c-a1c8-6f7135abdc2a}" symbol="183" label="path 500 - 1000"/>
         <rule scalemaxdenom="5000" scalemindenom="1000" key="{ddbe8231-d025-4c9c-85c8-187515daa8d3}" symbol="184" label="path 1000 - 5000"/>
@@ -17357,7 +17357,7 @@
           </settings>
         </rule>
       </rule>
-      <rule key="{d2353986-e9e7-44d7-9272-60778f68fb74}" description="paths" filter="&quot;fclass&quot; IN ('footway','cycleway','path','pedestrian','unknown', 'bridleway', 'steps') AND &quot;tunnel&quot; IN ('F', 'no', 'False') AND &quot;bridge&quot; IN ('F', 'no', 'False')">
+      <rule key="{d2353986-e9e7-44d7-9272-60778f68fb74}" description="paths" filter="&quot;fclass&quot; IN ('footway','cycleway','path','pedestrian','unknown', 'bridleway', 'steps') AND (&quot;tunnel&quot; = false) AND (&quot;bridge&quot; =  false)">
         <rule scalemaxdenom="5001" scalemindenom="1" key="{1a17c21a-6b88-4358-a7e6-ccc9ee5bf244}" description="paths all scales">
           <settings calloutType="simple">
             <text-style fontWeight="50" legendString="Aa" fontLetterSpacing="0" forcedBold="0" allowHtml="0" fontWordSpacing="0" previewBkgrdColor="255,255,255,255,rgb:1,1,1,1" blendMode="0" textColor="0,0,0,255,rgb:0,0,0,1" fontFamily="Noto Sans" tabStopDistanceUnit="Point" fontItalic="1" useSubstitutions="0" fontStrikeout="0" capitalization="0" isExpression="0" namedStyle="Italic" forcedItalic="0" fontSizeUnit="Point" multilineHeightUnit="Percentage" textOpacity="1" fontUnderline="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" fontKerning="1" fieldName="name" tabStopDistanceMapUnitScale="3x:0,0,0,0,0,0" fontSize="6" multilineHeight="1" tabStopDistance="80">
