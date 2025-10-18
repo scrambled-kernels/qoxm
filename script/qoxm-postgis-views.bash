@@ -91,7 +91,7 @@ WITH "qw_pl" AS (SELECT
 	("tw1_po"."all_tags"->>'place' IS NOT NULL)
 	OR (("tw1_po"."all_tags"->>'area' = 'yes') AND ("tw1_po"."all_tags"->>'name' IS NOT NULL))
  )
- ORDER BY "tw1_po"."osm_id" ASC
+ ORDER BY "tw1_po"."osm_id"::BIGINT ASC
 )
 SELECT
 	"q_pl".*,
@@ -217,7 +217,7 @@ WITH "qw_ro" AS (SELECT
 	"tw1_li"."all_tags"->>'highway' IS NOT NULL
  )
  ORDER BY
-	"tw1_li"."osm_id" ASC
+	"tw1_li"."osm_id"::BIGINT ASC
 )
 SELECT
 	"q_ro".*,
@@ -314,7 +314,7 @@ WITH "qw_la" AS (SELECT
 	OR ("tw1_mp"."all_tags"->>'leisure' IS NOT NULL)
 	OR ("tw1_mp"."all_tags"->>'natural' IS NOT NULL)
  )
- ORDER BY "tw1_mp"."osm_id" ASC
+ ORDER BY "tw1_mp"."osm_id"::BIGINT ASC
 )
 SELECT
 	"q_la".*,
@@ -362,5 +362,67 @@ CREATE UNIQUE INDEX "qoxm_landuse_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}".
 CREATE UNIQUE INDEX "qoxm_landuse_a_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("osm_way_id" ASC);
 CREATE INDEX "qoxm_landuse_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "gist" ("geom");
 
+DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" CASCADE;
+
+CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" AS
+WITH "qw_wa" AS (SELECT
+	"tw1_mp"."osm_id"::BIGINT,
+	"tw1_mp"."osm_way_id"::BIGINT,
+	"tw1_mp"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	(CASE
+		WHEN (("tw1_mp"."all_tags"->>'natural' = 'water') AND ("tw1_mp"."all_tags"->>'water' NOT IN ('reservoir', 'river'))) THEN 8200
+		WHEN (("tw1_mp"."all_tags"->>'landuse' = 'reservoir') OR (("tw1_mp"."all_tags"->>'natural' = 'water') AND ("tw1_mp"."all_tags"->>'water' = 'reservoir'))) THEN 8201
+		WHEN (("tw1_mp"."all_tags"->>'waterway' = 'riverbank') OR (("tw1_mp"."all_tags"->>'natural' = 'water') AND ("tw1_mp"."all_tags"->>'water' = 'river'))) THEN 8202
+		WHEN ("tw1_mp"."all_tags"->>'waterway' = 'riverbank') THEN 8203
+		WHEN ("tw1_mp"."all_tags"->>'natural' = 'glacier') THEN 8211
+		WHEN ("tw1_mp"."all_tags"->>'natural' = 'wetland') THEN 8221
+		ELSE NULL
+	END)::SMALLINT AS "code",
+	"tw1_mp"."all_tags"->>'name'::VARCHAR(100) AS "name",
+	(CASE
+		WHEN ("tw1_mp"."all_tags"->>'name:${OSM_DATA_LANG_CODE,,}' IS NOT NULL) THEN "tw1_mp"."all_tags"->>'name:${OSM_DATA_LANG_CODE,,}'
+		ELSE "tw1_mp"."all_tags"->>'name'
+	END)::VARCHAR(100) AS "loc_name",
+	(CASE
+		WHEN ("tw1_mp"."all_tags"->>'name:en' IS NOT NULL) THEN "tw1_mp"."all_tags"->>'name:en}'
+		ELSE "tw1_mp"."all_tags"->>'name'
+	END)::VARCHAR(100) AS "int_name",
+	"tw1_mp"."all_tags"->>'alt_name'::VARCHAR(100) AS "alt_name",
+	"tw1_mp"."all_tags"->>'water'::VARCHAR(20) AS "water",
+	'R'::CHAR(1) AS "osm_geomtype",
+	"tw1_mp"."geom"
+ FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
+ WHERE (
+	 ("tw1_mp"."all_tags"->>'natural' IN ('glacier', 'water', 'wetland'))
+	 OR ("tw1_mp"."all_tags"->>'waterway' IS NOT NULL)
+	 OR ("tw1_mp"."all_tags"->>'water' IS NOT NULL)
+ )
+ ORDER BY
+	"tw1_mp"."osm_id"::BIGINT ASC
+)
+SELECT
+	"q_wa".*,
+	ROW_NUMBER() OVER (ORDER BY "q_wa"."osm_id" ASC) AS "id",
+	(CASE
+		WHEN ("q_wa"."code" = 8200) THEN 'water'
+		WHEN ("q_wa"."code" = 8201) THEN 'reservoir'
+		WHEN ("q_wa"."code" = 8202) THEN 'river'
+		WHEN ("q_wa"."code" = 8203) THEN 'dock'
+		WHEN ("q_wa"."code" = 8211) THEN 'glacier'
+		WHEN ("q_wa"."code" = 8221) THEN 'wetland'
+		ELSE NULL
+	END)::VARCHAR(40) AS "fclass",
+	NULL AS "aal"
+ FROM "qw_wa" AS "q_wa"
+ WHERE (
+	 "q_wa"."code" IS NOT NULL
+);
+
+CREATE UNIQUE INDEX "qoxm_water_a_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("id" ASC);
+CREATE UNIQUE INDEX "qoxm_water_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("osm_id" ASC);
+CREATE UNIQUE INDEX "qoxm_water_a_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("osm_way_id" ASC);
+CREATE INDEX "qoxm_water_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "gist" ("geom");
+
 COMMIT;
+
 66846bd11f2b4aa2b22067c21e20a45e
