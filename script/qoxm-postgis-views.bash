@@ -84,7 +84,7 @@ WITH "qw_pl" AS (SELECT
 		WHEN ("tw1_po"."all_tags"->>'population' ~ '^[0-9]+$') THEN "tw1_po"."all_tags"->>'population'
 		ELSE NULL
 	END)::INT4 AS "population",
-	'N'::CHAR(1) AS "osm_geomtype",
+	'N'::CHAR(1) AS "osmgeomsrc",
 	"tw1_po"."geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."points" AS "tw1_po"
  WHERE (
@@ -167,8 +167,8 @@ WITH "qw_ro" AS (SELECT
 	("tw1_li"."all_tags"->>'toll') AS "toll",
 	("tw1_li"."all_tags"->>'toll:bus') AS "toll_bus",
 	("tw1_li"."all_tags"->>'toll:hgv') AS "toll_hgv",
-	SUBSTRING("tw1_li"."all_tags"->>'charge' FROM '^([0-9]+([.][0-9]{1,3}))([ ].+)?$')::DECIMAL(15, 3) AS "charge_value",
-	SUBSTRING("tw1_li"."all_tags"->>'charge' FROM '^[0-9.]+[ ]+([A-Z]{3})(/.*)?$')::CHAR(3) AS "charge_curr",
+	SUBSTRING("tw1_li"."all_tags"->>'charge' FROM '^([0-9]+([.][0-9]{1,3}))([ ].+)?$')::DECIMAL(15, 3) AS "charge_v",
+	SUBSTRING("tw1_li"."all_tags"->>'charge' FROM '^[0-9.]+[ ]+([A-Z]{3})(/.*)?$')::CHAR(3) AS "charge_c",
 	(CASE
 		WHEN ("tw1_li"."all_tags"->>'maxspeed' ~ '^[0-9]+$') THEN "tw1_li"."all_tags"->>'maxspeed'
 		ELSE NULL
@@ -188,7 +188,7 @@ WITH "qw_ro" AS (SELECT
 	(CASE
 		WHEN (("tw1_li"."all_tags"->>'bridge' IS NOT NULL) AND ("tw1_li"."all_tags"->>'bridge' ~ '.+')) THEN LOWER("tw1_li"."all_tags"->>'bridge')
 		ELSE NULL
-	END)::VARCHAR(32) AS "bridge_value",
+	END)::VARCHAR(32) AS "bridge_v",
 	(CASE
 		WHEN (("tw1_li"."all_tags"->>'tunnel' IS NOT NULL) AND ("tw1_li"."all_tags"->>'tunnel' ~ '.+')) THEN 1
 		ELSE 0
@@ -196,7 +196,7 @@ WITH "qw_ro" AS (SELECT
 	(CASE
 		WHEN (("tw1_li"."all_tags"->>'tunnel' IS NOT NULL) AND ("tw1_li"."all_tags"->>'tunnel' ~ '.+')) THEN LOWER("tw1_li"."all_tags"->>'tunnel')
 		ELSE NULL
-	END)::VARCHAR(32) AS "tunnel_value",
+	END)::VARCHAR(32) AS "tunnel_v",
 	("tw1_li"."all_tags"->>'surface')::VARCHAR(20) AS "surface",
 	("tw1_li"."all_tags"->>'smoothness')::VARCHAR(32) AS "smoothness",
 	"tw1_li"."all_tags"->>'lit' AS "lit",
@@ -210,7 +210,7 @@ WITH "qw_ro" AS (SELECT
 	"tw1_li"."all_tags"->>'motorcar' AS "motorcar",
 	"tw1_li"."all_tags"->>'motorcycle' AS "motorcycle",
 	"tw1_li"."all_tags"->>'vehicle' AS "vehicle",
-	'W'::CHAR(1) AS "osm_geomtype",
+	'W'::CHAR(1) AS "osmgeomsrc",
 	"tw1_li"."geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."lines" AS "tw1_li"
  WHERE (
@@ -306,7 +306,7 @@ WITH "qw_la" AS (SELECT
 		WHEN ("tw1_mp"."all_tags"->>'natural' = 'heath') THEN 7219
 		ELSE NULL
 	END)::SMALLINT AS "code",
-	'R'::CHAR(1) AS "osm_geomtype",
+	'R'::CHAR(1) AS "osmgeomsrc",
 	"tw1_mp"."geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
  WHERE (
@@ -389,7 +389,7 @@ WITH "qw_wa" AS (SELECT
 	END)::VARCHAR(100) AS "int_name",
 	"tw1_mp"."all_tags"->>'alt_name'::VARCHAR(100) AS "alt_name",
 	"tw1_mp"."all_tags"->>'water'::VARCHAR(20) AS "water",
-	'R'::CHAR(1) AS "osm_geomtype",
+	'R'::CHAR(1) AS "osmgeomsrc",
 	"tw1_mp"."geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
  WHERE (
