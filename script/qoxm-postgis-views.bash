@@ -126,98 +126,145 @@ CREATE INDEX "qoxm_places_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places"
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" CASCADE;
 
 CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" AS
-WITH "qw_ro" AS (SELECT
-	"tw1_li"."osm_id"::BIGINT,
-	"tw1_li"."osm_timestamp"::TIMESTAMP AS "lastchange",
+WITH
+"q1w_ro" AS (SELECT
+	"tw1_li".*,
 	(CASE
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'motorway') THEN 5111
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'trunk') THEN 5112
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'primary') THEN 5113
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'secondary') THEN 5114
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'tertiary') THEN 5115
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'unclassified') THEN 5121
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'residential') THEN 5122
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'living_street') THEN 5123
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'pedestrian') THEN 5124
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'busway') THEN 5125
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'motorway_link') THEN 5131
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'trunk_link') THEN 5132
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'primary_link') THEN 5133
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'secondary_link') THEN 5134
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'tertiary_link') THEN 5135
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'service') THEN 5141
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'track') AND ("tw1_li"."all_tags"->>'tracktype' = 'grade1')) THEN 5143
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'track') AND ("tw1_li"."all_tags"->>'tracktype' = 'grade2')) THEN 5144
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'track') AND ("tw1_li"."all_tags"->>'tracktype' = 'grade3')) THEN 5145
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'track') AND ("tw1_li"."all_tags"->>'tracktype' = 'grade4')) THEN 5146
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'track') AND ("tw1_li"."all_tags"->>'tracktype' = 'grade5')) THEN 5147
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'track') THEN 5142
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'bridleway') OR (("tw1_li"."all_tags"->>'highway' = 'path') AND ("tw1_li"."all_tags"->>'horse' = 'designated'))) THEN 5151
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'cycleway') OR (("tw1_li"."all_tags"->>'highway' = 'path') AND ("tw1_li"."all_tags"->>'cycle' = 'designated'))) THEN 5152
-		WHEN (("tw1_li"."all_tags"->>'highway' = 'footway') OR (("tw1_li"."all_tags"->>'highway' = 'path') AND ("tw1_li"."all_tags"->>'foot' = 'designated'))) THEN 5153
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'path') THEN 5154
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'steps') THEN 5155
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'ferry') THEN 5160
-		WHEN ("tw1_li"."all_tags"->>'highway' = 'road') THEN 5199
-		ELSE NULL
-	END)::SMALLINT AS "code",
-	("tw1_li"."all_tags"->>'ref')::VARCHAR(20) AS "ref",
-	("tw1_li"."all_tags"->>'int_ref')::VARCHAR(20) AS "int_ref",
-	("tw1_li"."all_tags"->>'oneway')::VARCHAR(1) AS "oneway",
-	("tw1_li"."all_tags"->>'toll') AS "toll",
-	("tw1_li"."all_tags"->>'toll:bus') AS "toll_bus",
-	("tw1_li"."all_tags"->>'toll:hgv') AS "toll_hgv",
-	SUBSTRING("tw1_li"."all_tags"->>'charge' FROM '^([0-9]+([.][0-9]{1,3}))([ ].+)?$')::DECIMAL(15, 3) AS "charge_v",
-	SUBSTRING("tw1_li"."all_tags"->>'charge' FROM '^[0-9.]+[ ]+([A-Z]{3})(/.*)?$')::CHAR(3) AS "charge_c",
+		WHEN ("tw1_li"."all_tags"->>'highway' = 'construction') THEN "tw1_li"."all_tags"->>'construction'
+		ELSE "tw1_li"."all_tags"->>'highway'
+	END)::VARCHAR AS "highway_type",
 	(CASE
-		WHEN ("tw1_li"."all_tags"->>'maxspeed' ~ '^[0-9]+$') THEN "tw1_li"."all_tags"->>'maxspeed'
-		ELSE NULL
-	END)::SMALLINT AS "maxspeed",
-	(CASE
-		WHEN ("tw1_li"."all_tags"->>'minspeed' ~ '^[0-9]+$') THEN "tw1_li"."all_tags"->>'minspeed'
-		ELSE NULL
-	END)::SMALLINT AS "minspeed",
-	(CASE
-		WHEN ("tw1_li"."all_tags"->>'layer' ~ '^[0-9]+$') THEN "tw1_li"."all_tags"->>'layer'
-		ELSE NULL
-	END)::SMALLINT AS "layer",
-	(CASE
-		WHEN (("tw1_li"."all_tags"->>'bridge' IS NOT NULL) AND ("tw1_li"."all_tags"->>'bridge' ~ '.+')) THEN 1
-		ELSE 0
-	END)::SMALLINT AS "bridge",
-	(CASE
-		WHEN (("tw1_li"."all_tags"->>'bridge' IS NOT NULL) AND ("tw1_li"."all_tags"->>'bridge' ~ '.+')) THEN LOWER("tw1_li"."all_tags"->>'bridge')
-		ELSE NULL
-	END)::VARCHAR(32) AS "bridge_v",
-	(CASE
-		WHEN (("tw1_li"."all_tags"->>'tunnel' IS NOT NULL) AND ("tw1_li"."all_tags"->>'tunnel' ~ '.+')) THEN 1
-		ELSE 0
-	END)::SMALLINT AS "tunnel",
-	(CASE
-		WHEN (("tw1_li"."all_tags"->>'tunnel' IS NOT NULL) AND ("tw1_li"."all_tags"->>'tunnel' ~ '.+')) THEN LOWER("tw1_li"."all_tags"->>'tunnel')
-		ELSE NULL
-	END)::VARCHAR(32) AS "tunnel_v",
-	("tw1_li"."all_tags"->>'surface')::VARCHAR(20) AS "surface",
-	("tw1_li"."all_tags"->>'smoothness')::VARCHAR(32) AS "smoothness",
-	"tw1_li"."all_tags"->>'lit' AS "lit",
-	(CASE
-		WHEN ("tw1_li"."all_tags"->>'width' ~ '^[0-9]+$') THEN "tw1_li"."all_tags"->>'width'
-		ELSE NULL
-	END)::SMALLINT AS "width",
-	"tw1_li"."all_tags"->>'access' AS "access",
-	"tw1_li"."all_tags"->>'horse' AS "horse",
-	"tw1_li"."all_tags"->>'motor_vehicle' AS "motor_vehicle",
-	"tw1_li"."all_tags"->>'motorcar' AS "motorcar",
-	"tw1_li"."all_tags"->>'motorcycle' AS "motorcycle",
-	"tw1_li"."all_tags"->>'vehicle' AS "vehicle",
-	'W'::CHAR(1) AS "osmgeomsrc",
-	"tw1_li"."geom"
+		WHEN ("tw1_li"."all_tags"->>'highway' = 'construction') THEN true
+		ELSE false
+	END)::BOOLEAN AS "in_construction"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."lines" AS "tw1_li"
  WHERE (
 	"tw1_li"."all_tags"->>'highway' IS NOT NULL
  )
  ORDER BY
 	"tw1_li"."osm_id"::BIGINT ASC
+),
+"q2w_ro" AS (SELECT
+	"q1w_ro"."osm_id"::BIGINT,
+	"q1w_ro"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	(CASE
+		WHEN ("q1w_ro"."highway_type" = 'motorway') THEN 5111
+		WHEN ("q1w_ro"."highway_type" = 'trunk') THEN 5112
+		WHEN ("q1w_ro"."highway_type" = 'primary') THEN 5113
+		WHEN ("q1w_ro"."highway_type" = 'secondary') THEN 5114
+		WHEN ("q1w_ro"."highway_type" = 'tertiary') THEN 5115
+		WHEN ("q1w_ro"."highway_type" = 'unclassified') THEN 5121
+		WHEN ("q1w_ro"."highway_type" = 'residential') THEN 5122
+		WHEN ("q1w_ro"."highway_type" = 'living_street') THEN 5123
+		WHEN ("q1w_ro"."highway_type" = 'pedestrian') THEN 5124
+		WHEN ("q1w_ro"."highway_type" = 'busway') THEN 5125
+		WHEN ("q1w_ro"."highway_type" = 'motorway_link') THEN 5131
+		WHEN ("q1w_ro"."highway_type" = 'trunk_link') THEN 5132
+		WHEN ("q1w_ro"."highway_type" = 'primary_link') THEN 5133
+		WHEN ("q1w_ro"."highway_type" = 'secondary_link') THEN 5134
+		WHEN ("q1w_ro"."highway_type" = 'tertiary_link') THEN 5135
+		WHEN ("q1w_ro"."highway_type" = 'service') THEN 5141
+		WHEN (("q1w_ro"."highway_type" = 'track') AND ("q1w_ro"."all_tags"->>'tracktype' = 'grade1')) THEN 5143
+		WHEN (("q1w_ro"."highway_type" = 'track') AND ("q1w_ro"."all_tags"->>'tracktype' = 'grade2')) THEN 5144
+		WHEN (("q1w_ro"."highway_type" = 'track') AND ("q1w_ro"."all_tags"->>'tracktype' = 'grade3')) THEN 5145
+		WHEN (("q1w_ro"."highway_type" = 'track') AND ("q1w_ro"."all_tags"->>'tracktype' = 'grade4')) THEN 5146
+		WHEN (("q1w_ro"."highway_type" = 'track') AND ("q1w_ro"."all_tags"->>'tracktype' = 'grade5')) THEN 5147
+		WHEN ("q1w_ro"."highway_type" = 'track') THEN 5142
+		WHEN (("q1w_ro"."highway_type" = 'bridleway') OR (("q1w_ro"."highway_type" = 'path') AND ("q1w_ro"."all_tags"->>'horse' = 'designated'))) THEN 5151
+		WHEN (("q1w_ro"."highway_type" = 'cycleway') OR (("q1w_ro"."highway_type" = 'path') AND ("q1w_ro"."all_tags"->>'cycle' = 'designated'))) THEN 5152
+		WHEN (("q1w_ro"."highway_type" = 'footway') OR (("q1w_ro"."highway_type" = 'path') AND ("q1w_ro"."all_tags"->>'foot' = 'designated'))) THEN 5153
+		WHEN ("q1w_ro"."highway_type" = 'path') THEN 5154
+		WHEN ("q1w_ro"."highway_type" = 'steps') THEN 5155
+		WHEN ("q1w_ro"."highway_type" = 'ferry') THEN 5160
+		WHEN ("q1w_ro"."highway_type" = 'road') THEN 5199
+		ELSE NULL
+	END)::SMALLINT AS "code",
+	"q1w_ro"."in_construction"::BOOLEAN AS "inconstrct",
+	("q1w_ro"."all_tags"->>'ref')::VARCHAR(20) AS "ref",
+	("q1w_ro"."all_tags"->>'int_ref')::VARCHAR(20) AS "int_ref",
+	(CASE
+		WHEN ("q1w_ro"."all_tags"->>'lanes' ~ '^[0-9]{3}$') THEN "q1w_ro"."all_tags"->>'lanes'
+		ELSE NULL
+	END)::SMALLINT AS "lanes",
+	("q1w_ro"."all_tags"->>'name')::VARCHAR(100) AS "name",
+	("q1w_ro"."all_tags"->>'oneway')::VARCHAR(1) AS "oneway",
+	("q1w_ro"."all_tags"->>'toll') AS "toll",
+	("q1w_ro"."all_tags"->>'toll:bus') AS "toll_bus",
+	("q1w_ro"."all_tags"->>'toll:hgv') AS "toll_hgv",
+	SUBSTRING("q1w_ro"."all_tags"->>'charge' FROM '^([0-9]+([.][0-9]{1,3}))([ ].+)?$')::DECIMAL(15, 3) AS "charge_v",
+	SUBSTRING("q1w_ro"."all_tags"->>'charge' FROM '^[0-9.]+[ ]+([A-Z]{3})(/.*)?$')::CHAR(3) AS "charge_c",
+	(CASE
+		WHEN ("q1w_ro"."all_tags"->>'maxspeed' ~ '^[0-9]+$') THEN "q1w_ro"."all_tags"->>'maxspeed'
+		ELSE NULL
+	END)::SMALLINT AS "maxspeed",
+	(CASE
+		WHEN ("q1w_ro"."all_tags"->>'minspeed' ~ '^[0-9]+$') THEN "q1w_ro"."all_tags"->>'minspeed'
+		ELSE NULL
+	END)::SMALLINT AS "minspeed",
+	(CASE
+		WHEN ("q1w_ro"."all_tags"->>'layer' ~ '^[0-9]+$') THEN "q1w_ro"."all_tags"->>'layer'
+		ELSE NULL
+	END)::SMALLINT AS "layer",
+	(CASE
+		WHEN (("q1w_ro"."all_tags"->>'bridge' IS NOT NULL) AND ("q1w_ro"."all_tags"->>'bridge' ~ '.+')) THEN 1
+		ELSE 0
+	END)::SMALLINT AS "bridge",
+	(CASE
+		WHEN (("q1w_ro"."all_tags"->>'bridge' IS NOT NULL) AND ("q1w_ro"."all_tags"->>'bridge' ~ '.+')) THEN LOWER("q1w_ro"."all_tags"->>'bridge')
+		ELSE NULL
+	END)::VARCHAR(32) AS "bridge_v",
+	(CASE
+		WHEN (("q1w_ro"."all_tags"->>'tunnel' IS NOT NULL) AND ("q1w_ro"."all_tags"->>'tunnel' ~ '.+')) THEN 1
+		ELSE 0
+	END)::SMALLINT AS "tunnel",
+	(CASE
+		WHEN (("q1w_ro"."all_tags"->>'tunnel' IS NOT NULL) AND ("q1w_ro"."all_tags"->>'tunnel' ~ '.+')) THEN LOWER("q1w_ro"."all_tags"->>'tunnel')
+		ELSE NULL
+	END)::VARCHAR(32) AS "tunnel_v",
+	("q1w_ro"."all_tags"->>'surface')::VARCHAR(20) AS "surface",
+	("q1w_ro"."all_tags"->>'smoothness')::VARCHAR(32) AS "smoothness",
+	(CASE
+		WHEN ("q1w_ro"."all_tags"->>'incline' ~ '^-?[0-9]+$') THEN "q1w_ro"."all_tags"->>'incline'
+		ELSE NULL
+	END)::SMALLINT AS "incline",
+	"q1w_ro"."all_tags"->>'lit' AS "lit",
+	(CASE
+		WHEN ("q1w_ro"."all_tags"->>'width' ~ '^[0-9]+$') THEN "q1w_ro"."all_tags"->>'width'
+		ELSE NULL
+	END)::SMALLINT AS "width",
+	"q1w_ro"."all_tags"->>'access' AS "access",
+	"q1w_ro"."all_tags"->>'horse' AS "horse",
+	"q1w_ro"."all_tags"->>'motor_vehicle' AS "motor_veh",
+	"q1w_ro"."all_tags"->>'motorcar' AS "motorcar",
+	"q1w_ro"."all_tags"->>'motorcycle' AS "motorcycle",
+	"q1w_ro"."all_tags"->>'vehicle' AS "vehicle",
+	(CASE
+		WHEN ("q1w_ro"."all_tags"->>'motor_vehicle' = 'designated') THEN 'motor'
+		WHEN ("q1w_ro"."all_tags"->>'motor_vehicle' = 'yes') THEN 'motor'
+		WHEN ("q1w_ro"."all_tags"->>'horse' = 'designated') THEN 'other'
+		WHEN ("q1w_ro"."all_tags"->>'bicycle' = 'designated') THEN 'no_motor'
+		WHEN ("q1w_ro"."all_tags"->>'foot' = 'designated') THEN 'foot'
+		WHEN (("q1w_ro"."all_tags"->>'access' = 'permissive') OR ("q1w_ro"."all_tags"->>'motor_vehicle' = 'permissive')) THEN 'permissive'
+		WHEN (("q1w_ro"."all_tags"->>'access' IN ('no', 'forestry', 'agricultural', 'customers', 'disabled', 'employees', 'licence', 'military', 'permit', 'police', 'private', 'residents')) AND ("q1w_ro"."all_tags"->>'foot' NOT IN ('yes', 'designated')) AND ("q1w_ro"."all_tags"->>'bicycle' NOT IN ('yes', 'designated'))) THEN 'none'
+		WHEN (("q1w_ro"."all_tags"->>'vehicle' IN ('no', 'forestry', 'agricultural', 'customers', 'disabled', 'employees', 'licence', 'military', 'permit', 'police', 'private', 'residents')) AND ("q1w_ro"."all_tags"->>'foot' NOT IN ('yes', 'designated')) AND ("q1w_ro"."all_tags"->>'bicycle' NOT IN ('yes', 'designated'))) THEN 'foot'
+		WHEN ("q1w_ro"."all_tags"->>'motor_vehicle' IN ('no', 'forestry', 'agricultural', 'disabled', 'employees', 'licence', 'military', 'permit', 'police', 'private', 'residents')) THEN 'no_motor'
+		WHEN ("q1w_ro"."all_tags"->>'bicycle' = 'yes') THEN 'no_motor'
+		WHEN ("q1w_ro"."all_tags"->>'foot' = 'yes') THEN 'foot'
+		WHEN ("q1w_ro"."highway_type" = 'bridleway') THEN 'other'
+		WHEN ("q1w_ro"."highway_type" = 'busway') THEN 'other'
+		WHEN ("q1w_ro"."highway_type" = 'cycleway') THEN 'no_motor'
+		WHEN ("q1w_ro"."highway_type" IN ('track', 'path')) THEN 'other'
+		WHEN ("q1w_ro"."highway_type" IN ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified', 'residential', 'living_street')) THEN 'motor'
+		ELSE 'other'
+	END)::VARCHAR(10) AS "pubaccess",
+	'W'::CHAR(1) AS "osmgeomsrc",
+	"q1w_ro"."geom"
+ FROM "q1w_ro"
+ WHERE (
+	"q1w_ro"."highway_type" IS NOT NULL
+ )
+ ORDER BY
+	"q1w_ro"."osm_id"::BIGINT ASC
 )
 SELECT
 	"q_ro".*,
@@ -255,13 +302,16 @@ SELECT
 		ELSE NULL
 	END)::VARCHAR(40) AS "fclass",
 	NULL AS "aal"
- FROM "qw_ro" AS "q_ro"
+ FROM "q2w_ro" AS "q_ro"
  WHERE (
 		("q_ro"."code" > 5100) AND ("q_ro"."code" <=5199)
 );
 
 CREATE UNIQUE INDEX "qoxm_roads_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("id" ASC);
 CREATE UNIQUE INDEX "qoxm_roads_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("osm_id" ASC);
+CREATE INDEX "qoxm_roads_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("fclass" ASC);
+CREATE INDEX "qoxm_roads_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("name" ASC);
+CREATE INDEX "qoxm_roads_ref_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("ref" ASC);
 CREATE INDEX "qoxm_roads_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "gist" ("geom");
 
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" CASCADE;
@@ -360,6 +410,7 @@ SELECT
 CREATE UNIQUE INDEX "qoxm_landuse_a_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("id" ASC);
 CREATE UNIQUE INDEX "qoxm_landuse_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("osm_id" ASC);
 CREATE UNIQUE INDEX "qoxm_landuse_a_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("osm_way_id" ASC);
+CREATE INDEX "qoxm_landuse_a_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("fclass" ASC);
 CREATE INDEX "qoxm_landuse_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "gist" ("geom");
 
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" CASCADE;
@@ -421,6 +472,7 @@ SELECT
 CREATE UNIQUE INDEX "qoxm_water_a_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("id" ASC);
 CREATE UNIQUE INDEX "qoxm_water_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("osm_id" ASC);
 CREATE UNIQUE INDEX "qoxm_water_a_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("osm_way_id" ASC);
+CREATE INDEX "qoxm_water_a_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("fclass" ASC);
 CREATE INDEX "qoxm_water_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "gist" ("geom");
 
 COMMIT;
