@@ -229,27 +229,27 @@
         <rule key="{943d38c1-63d5-4ec8-8a26-a54589863be3}" label="unpaved track grade2 - no motor vehicles" symbol="39" filter="(&quot;fclass&quot; = 'track_grade2') AND (&quot;pubaccess&quot; = 'no_motor')"/>
         <rule key="{72c3bf20-6260-467d-9cb8-3c0c1f633e5c}" label="unpaved track grade2 - permissive" symbol="40" filter="(&quot;fclass&quot; = 'track_grade2') AND (&quot;pubaccess&quot; = 'permissive')"/>
         <rule key="{e8d931e4-6692-4592-8396-f3ced0ea57e2}" label="unpaved track grade2 - all access" symbol="41" filter="(&quot;fclass&quot; = 'track_grade2') AND (&quot;pubaccess&quot; = 'motor')"/>
-        <rule key="{4d61d941-5d19-4843-a82a-ad35f99e2eed}" label="unpaved track grade2 - other/unknown" symbol="42" filter="(&quot;fclass&quot; = 'track_grade2') AND (&quot;pubaccess&quot; IN ('foot', 'other'))"/>
+        <rule key="{4d61d941-5d19-4843-a82a-ad35f99e2eed}" label="unpaved track grade2 - other/unknown" symbol="42" filter="(&quot;fclass&quot; = 'track_grade2') AND ((&quot;pubaccess&quot; IS NULL) OR (&quot;pubaccess&quot; IN ('foot', 'other')))"/>
         <rule key="{af7e8cc5-4383-4ab3-957b-deed58a5f9e6}" label="unpaved track grade3 - no access" symbol="43" filter="(&quot;fclass&quot; = 'track_grade3') AND (&quot;pubaccess&quot; = 'none')"/>
         <rule key="{ce36fa3b-b61a-4cba-bcd6-b1dc72e70ad2}" label="unpaved track grade3 - no motor vehicles" symbol="44" filter="(&quot;fclass&quot; = 'track_grade3') AND (&quot;pubaccess&quot; = 'no_motor')"/>
         <rule key="{45f7fc65-4334-467d-be38-63acfcfbf344}" label="unpaved track grade3 - permissive" symbol="45" filter="(&quot;fclass&quot; = 'track_grade3') AND (&quot;pubaccess&quot; = 'permissive')"/>
         <rule key="{fe55bd09-8144-4b77-910a-f7ea690136de}" label="unpaved track grade3 - all access" symbol="46" filter="(&quot;fclass&quot; = 'track_grade3') AND (&quot;pubaccess&quot; = 'motor')"/>
-        <rule key="{fe6bebc9-d639-4662-848e-b4d6ff56f781}" label="unpaved track grade3 - other/unknown" symbol="47" filter="(&quot;fclass&quot; = 'track_grade3') AND (&quot;pubaccess&quot; IN ('foot', 'other'))"/>
+        <rule key="{fe6bebc9-d639-4662-848e-b4d6ff56f781}" label="unpaved track grade3 - other/unknown" symbol="47" filter="(&quot;fclass&quot; = 'track_grade3') AND ((&quot;pubaccess&quot; IS NULL) OR (&quot;pubaccess&quot; IN ('foot', 'other')))"/>
         <rule key="{16925733-add7-409a-90c0-4f042f80d9fd}" label="unpaved track grade4 - no access" symbol="48" filter="(&quot;fclass&quot; = 'track_grade4') AND (&quot;pubaccess&quot; = 'none')"/>
         <rule key="{5cd7558d-b67d-48bd-b215-93d103fba2e6}" label="unpaved track grade4 - no motor vehicles" symbol="49" filter="(&quot;fclass&quot; = 'track_grade4') AND (&quot;pubaccess&quot; = 'no_motor')"/>
         <rule key="{8048187c-251f-4d34-8c93-b26677269f9d}" label="unpaved track grade4 - permissive" symbol="50" filter="(&quot;fclass&quot; = 'track_grade4') AND (&quot;pubaccess&quot; = 'permissive')"/>
         <rule key="{78c7441a-4e92-40fc-8b7f-5a44dd92e8bb}" label="unpaved track grade4 - all access" symbol="51" filter="(&quot;fclass&quot; = 'track_grade4') AND (&quot;pubaccess&quot; = 'motor')"/>
-        <rule key="{516efa7b-5bbe-448a-9b3f-ff09ce1b538a}" label="unpaved track grade4 - other/unknown" symbol="52" filter="(&quot;fclass&quot; = 'track_grade4') AND (&quot;pubaccess&quot; IN ('foot', 'other'))"/>
+        <rule key="{516efa7b-5bbe-448a-9b3f-ff09ce1b538a}" label="unpaved track grade4 - other/unknown" symbol="52" filter="(&quot;fclass&quot; = 'track_grade4') AND ((&quot;pubaccess&quot; IS NULL) OR (&quot;pubaccess&quot; IN ('foot', 'other')))"/>
         <rule key="{14713e70-c8dd-4f02-9b07-f8ff3c6f31d7}" label="unpaved track grade5 - no access" symbol="53" filter="(&quot;fclass&quot; = 'track_grade5') AND (&quot;pubaccess&quot; = 'none')"/>
         <rule key="{cbab1b9c-b273-48dc-8ce9-1824433e9f37}" label="unpaved track grade5 - no motor vehicles" symbol="54" filter="(&quot;fclass&quot; = 'track_grade5') AND (&quot;pubaccess&quot; = 'no_motor')"/>
         <rule key="{3933beb3-fb8a-445d-be3a-fa30533c2b67}" label="unpaved track grade5 - permissive" symbol="55" filter="(&quot;fclass&quot; = 'track_grade5') AND (&quot;pubaccess&quot; = 'permissive')"/>
         <rule key="{b72a0512-204e-4250-9d9e-a603a49d1c99}" label="unpaved track grade5 - all access" symbol="56" filter="(&quot;fclass&quot; = 'track_grade5') AND (&quot;pubaccess&quot; = 'motor')"/>
-        <rule key="{ed890250-2375-40bd-83f5-cbf7ac22f7d2}" label="unpaved track grade5 - other/unknown" symbol="57" filter="(&quot;fclass&quot; = 'track_grade5') AND (&quot;pubaccess&quot; IN ('foot', 'other'))"/>
+        <rule key="{ed890250-2375-40bd-83f5-cbf7ac22f7d2}" label="unpaved track grade5 - other/unknown" symbol="57" filter="(&quot;fclass&quot; = 'track_grade5') AND ((&quot;pubaccess&quot; IS NULL) OR (&quot;pubaccess&quot; IN ('foot', 'other')))"/>
         <rule key="{a06b0178-391d-4696-8774-f904c7180409}" label="unpaved track no grade - no access" symbol="58" filter="(&quot;fclass&quot; = 'track') AND (&quot;pubaccess&quot; = 'none')"/>
         <rule key="{3a2da020-9f24-4be1-b300-1a041141a412}" label="unpaved track no grade - no motor vehicles" symbol="59" filter="(&quot;fclass&quot; = 'track') AND (&quot;pubaccess&quot; = 'no_motor')"/>
         <rule key="{ed509752-88ab-4805-ac13-aa3f39cabee5}" label="unpaved track no grade - permissive" symbol="60" filter="(&quot;fclass&quot; = 'track') AND (&quot;pubaccess&quot; = 'permissive')"/>
-        <rule key="{a873930f-9b9e-45e5-ae3c-a0fe1243533f}" label="unpaved track grade5 - all access" symbol="61" filter="(&quot;fclass&quot; = 'track') AND (&quot;pubaccess&quot; = 'motor')"/>
-        <rule key="{7e658f37-1382-4261-99bb-bed9ca2d4e78}" label="unpaved track grade5 - other/unknown" symbol="62" filter="(&quot;fclass&quot; = 'track') AND (&quot;pubaccess&quot; IN ('foot', 'other'))"/>
+        <rule key="{a873930f-9b9e-45e5-ae3c-a0fe1243533f}" label="unpaved track no grade - all access" symbol="61" filter="(&quot;fclass&quot; = 'track') AND (&quot;pubaccess&quot; = 'motor')"/>
+        <rule key="{7e658f37-1382-4261-99bb-bed9ca2d4e78}" label="unpaved track no grade - other/unknown" symbol="62" filter="(&quot;fclass&quot; = 'track') AND ((&quot;pubaccess&quot; IS NULL) OR (&quot;pubaccess&quot; IN ('foot', 'other')))"/>
       </rule>
       <rule key="{acce7239-8f8d-4336-a345-7bc579ddb735}" label="paths" filter="&quot;fclass&quot; IN ('footway', 'cycleway', 'path', 'pedestrian', 'unknown', 'bridleway', 'steps') AND (&quot;tunnel&quot; = false) AND (&quot;bridge&quot; =  false)">
         <rule key="{4f83537d-af80-4594-a64f-5a66bc7f3065}" label="path 0 - 500" symbol="63" scalemaxdenom="500" scalemindenom="1"/>
@@ -2784,7 +2784,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="164,164,164,115,rgb:0.6431373,0.6431373,0.6431373,0.4500038" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.8" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -2822,7 +2822,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="132,32,32,191,rgb:0.5176471,0.1254902,0.1254902,0.7490196" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.9" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -2869,7 +2869,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="164,164,164,115,rgb:0.6431373,0.6431373,0.6431373,0.4500038" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.8" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -2907,7 +2907,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="169,64,96,191,rgb:0.6627451,0.2509804,0.3764706,0.7490196" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.9" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -2954,7 +2954,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="164,164,164,115,rgb:0.6431373,0.6431373,0.6431373,0.4500038" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.8" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -2992,7 +2992,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="179,144,37,191,rgb:0.7019608,0.5647059,0.145098,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.9" type="QString"/>
+            <Option name="line_width" value="1.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3039,7 +3039,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="164,164,164,115,rgb:0.6431373,0.6431373,0.6431373,0.4500038" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.8" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3077,7 +3077,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="45,144,37,191,rgb:0.1764706,0.5647059,0.145098,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.9" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3124,7 +3124,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="164,164,164,115,rgb:0.6431373,0.6431373,0.6431373,0.4509804" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.8" type="QString"/>
+            <Option name="line_width" value="3.2" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3160,9 +3160,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,115,rgb:0.6431373,0.6431373,0.6431373,0.4509804" type="QString"/>
+            <Option name="line_color" value="0,0,0,102,rgb:0,0,0,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.9" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3207,7 +3207,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
+            <Option name="line_color" value="164,164,164,128,rgb:0.6431373,0.6431373,0.6431373,0.5000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3247,7 +3247,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="132,32,32,191,rgb:0.5176471,0.1254902,0.1254902,0.7490196" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3292,7 +3292,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
+            <Option name="line_color" value="164,164,164,128,rgb:0.6431373,0.6431373,0.6431373,0.5000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3332,7 +3332,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="169,64,96,191,rgb:0.6627451,0.2509804,0.3764706,0.7490196" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3500,7 +3500,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
+            <Option name="line_color" value="164,164,164,128,rgb:0.6431373,0.6431373,0.6431373,0.5000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3540,7 +3540,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="179,144,37,191,rgb:0.7019608,0.5647059,0.145098,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3585,7 +3585,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
+            <Option name="line_color" value="164,164,164,128,rgb:0.6431373,0.6431373,0.6431373,0.5000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3623,9 +3623,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="45,144,37,191,rgb:0.1764706,0.5647059,0.145098,0.7490196" type="QString"/>
+            <Option name="line_color" value="45,144,37,191,rgb:0.1764706,0.5647059,0.145098,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3670,7 +3670,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
+            <Option name="line_color" value="164,164,164,128,rgb:0.6431373,0.6431373,0.6431373,0.5000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3708,9 +3708,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="192,192,192,217,rgb:0.7529412,0.7529412,0.7529412,0.8500038" type="QString"/>
+            <Option name="line_color" value="0,0,0,102,hsv:0,0,0,0.40000000000000002" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3755,7 +3755,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,89,rgb:0.6431373,0.6431373,0.6431373,0.3490196" type="QString"/>
+            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3793,9 +3793,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="132,32,32,191,rgb:0.5176471,0.1254902,0.1254902,0.7490196" type="QString"/>
+            <Option name="line_color" value="132,32,32,191,rgb:0.5176471,0.1254902,0.1254902,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3840,7 +3840,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,89,rgb:0.6431373,0.6431373,0.6431373,0.3490196" type="QString"/>
+            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3878,9 +3878,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="169,64,96,191,rgb:0.6627451,0.2509804,0.3764706,0.7490196" type="QString"/>
+            <Option name="line_color" value="169,64,96,191,rgb:0.6627451,0.2509804,0.3764706,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -3925,7 +3925,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,89,rgb:0.6431373,0.6431373,0.6431373,0.3490196" type="QString"/>
+            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -3963,9 +3963,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="179,144,37,191,rgb:0.7019608,0.5647059,0.145098,0.7499962" type="QString"/>
+            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4010,7 +4010,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,89,rgb:0.6431373,0.6431373,0.6431373,0.3490196" type="QString"/>
+            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -4050,7 +4050,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="45,144,37,191,rgb:0.1764706,0.5647059,0.145098,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4095,7 +4095,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="164,164,164,89,rgb:0.6431373,0.6431373,0.6431373,0.3490196" type="QString"/>
+            <Option name="line_color" value="164,164,164,102,rgb:0.6431373,0.6431373,0.6431373,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -4133,9 +4133,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="192,192,192,217,rgb:0.7529412,0.7529412,0.7529412,0.8500038" type="QString"/>
+            <Option name="line_color" value="0,0,0,102,hsv:0,0,0,0.40000000000000002" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4180,7 +4180,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="116,116,116,64,rgb:0.454902,0.454902,0.454902,0.2500038" type="QString"/>
+            <Option name="line_color" value="116,116,116,89,rgb:0.454902,0.454902,0.454902,0.3499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -4220,7 +4220,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="132,32,32,191,rgb:0.5176471,0.1254902,0.1254902,0.7490196" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4265,7 +4265,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="116,116,116,64,rgb:0.454902,0.454902,0.454902,0.2500038" type="QString"/>
+            <Option name="line_color" value="116,116,116,89,rgb:0.454902,0.454902,0.454902,0.3499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -4305,7 +4305,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="169,64,96,191,rgb:0.6627451,0.2509804,0.3764706,0.7490196" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4435,7 +4435,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="116,116,116,64,rgb:0.454902,0.454902,0.454902,0.2500038" type="QString"/>
+            <Option name="line_color" value="116,116,116,89,rgb:0.454902,0.454902,0.454902,0.3499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -4475,7 +4475,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="179,144,37,217,rgb:0.7019608,0.5647059,0.145098,0.8509804" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4520,7 +4520,7 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="116,116,116,64,rgb:0.454902,0.454902,0.454902,0.2500038" type="QString"/>
+            <Option name="line_color" value="116,116,116,89,rgb:0.454902,0.454902,0.454902,0.3499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="3.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
@@ -4560,7 +4560,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="45,144,37,191,rgb:0.1764706,0.5647059,0.145098,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4605,9 +4605,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="148,148,148,64,rgb:0.5803922,0.5803922,0.5803922,0.2509804" type="QString"/>
+            <Option name="line_color" value="148,148,148,89,rgb:0.5803922,0.5803922,0.5803922,0.3499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4643,9 +4643,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="192,192,192,217,rgb:0.7529412,0.7529412,0.7529412,0.8509804" type="QString"/>
+            <Option name="line_color" value="0,0,0,102,hsv:0,0,0,0.40000000000000002" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.4" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4692,7 +4692,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="116,116,116,38,rgb:0.454902,0.454902,0.454902,0.1499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4730,7 +4730,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="132,32,32,191,rgb:0.5176471,0.1254902,0.1254902,0.7499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4777,7 +4777,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="116,116,116,38,rgb:0.454902,0.454902,0.454902,0.1490196" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4815,7 +4815,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="169,64,96,191,rgb:0.6627451,0.2509804,0.3764706,0.7490196" type="QString"/>
             <Option name="line_style" value="dash" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4862,7 +4862,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="116,116,116,38,rgb:0.454902,0.454902,0.454902,0.1499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4900,7 +4900,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="179,144,37,191,rgb:0.7016556,0.5647059,0.145098,0.7499962" type="QString"/>
             <Option name="line_style" value="dash" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4947,7 +4947,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="116,116,116,38,rgb:0.454902,0.454902,0.454902,0.1499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -4985,7 +4985,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="45,144,37,192,rgb:0.1764706,0.5647059,0.145098,0.7510033" type="QString"/>
             <Option name="line_style" value="dash" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5032,7 +5032,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="116,116,116,38,rgb:0.454902,0.454902,0.454902,0.1499962" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5068,9 +5068,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="192,192,192,217,rgb:0.7529412,0.7529412,0.7529412,0.8509804" type="QString"/>
+            <Option name="line_color" value="0,0,0,102,rgb:0,0,0,0.4" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5117,7 +5117,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="0,0,0,38,hsv:0,0,0,0.14901960784313725" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5155,7 +5155,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="132,32,32,128,rgb:0.5176471,0.1254902,0.1254902,0.5000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5202,7 +5202,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="0,0,0,38,hsv:0,0,0,0.14901960784313725" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5240,7 +5240,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="169,64,96,128,rgb:0.6627451,0.2509804,0.3764706,0.5000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5416,7 +5416,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="0,0,0,38,hsv:0,0,0,0.14901960784313725" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5454,7 +5454,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="179,144,37,128,rgb:0.7019608,0.5647059,0.145098,0.5019608" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5501,7 +5501,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="0,0,0,38,hsv:0,0,0,0.14901960784313725" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5539,7 +5539,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="45,144,37,128,rgb:0.1764706,0.5647059,0.145098,0.5019608" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5586,7 +5586,7 @@
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="line_color" value="0,0,0,38,hsv:0,0,0,0.14901960784313725" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="3.4" type="QString"/>
+            <Option name="line_width" value="3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -5622,9 +5622,9 @@
             <Option name="dash_pattern_offset_unit" value="Pixel" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="192,192,192,128,rgb:0.7529412,0.7529412,0.7529412,0.5020066" type="QString"/>
+            <Option name="line_color" value="0,0,0,77,rgb:0,0,0,0.3000076" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
-            <Option name="line_width" value="1.8" type="QString"/>
+            <Option name="line_width" value="1.3" type="QString"/>
             <Option name="line_width_unit" value="Pixel" type="QString"/>
             <Option name="offset" value="0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
