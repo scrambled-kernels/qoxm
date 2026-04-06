@@ -34,6 +34,9 @@ function _proc_cmdline() {
 declare\
  OSM_DATA_COUNTRY_CODE=''
 
+declare -i\
+ GEOM_STORE_SRS=4326
+
 _proc_cmdline "${@}"
 
 declare\
@@ -567,7 +570,7 @@ WITH "qw_mx" AS (SELECT
 	"tw1_po"."osm_timestamp"::TIMESTAMP AS "lastchange",
 	"tw1_po"."all_tags",
 	'N'::CHAR(1) AS "osmgeomsrc",
-	"tw1_po"."geom"
+	"tw1_po"."geom"::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS})
  FROM "${OSM_DATA_TABLES_SCHEMA}"."points" AS "tw1_po"
  WHERE (
 	COALESCE("tw1_po"."all_tags"->>'amenity', "tw1_po"."all_tags"->>'emergency', "tw1_po"."all_tags"->>'highway', "tw1_po"."all_tags"->>'historic', "tw1_po"."all_tags"->>'leisure', "tw1_po"."all_tags"->>'man_made', "tw1_po"."all_tags"->>'office', "tw1_po"."all_tags"->>'shop', "tw1_po"."all_tags"->>'sport', "tw1_po"."all_tags"->>'tourism', "tw1_po"."all_tags"->>'vending') IS NOT NULL
@@ -579,17 +582,20 @@ WITH "qw_mx" AS (SELECT
 	"tw1_mp"."osm_timestamp"::TIMESTAMP AS "lastchange",
 	"tw1_mp"."all_tags",
 	'W'::CHAR(1) AS "osmgeomsrc",
-	ST_Centroid("tw1_mp"."geom", true) AS "geom"
+	ST_Centroid("tw1_mp"."geom", true)::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS}) AS "geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
  WHERE (
-	COALESCE("tw1_mp"."all_tags"->>'amenity', "tw1_po"."all_tags"->>'emergency', "tw1_po"."all_tags"->>'highway', "tw1_mp"."all_tags"->>'historic', "tw1_mp"."all_tags"->>'landuse', "tw1_mp"."all_tags"->>'leisure', "tw1_mp"."all_tags"->>'man_made', "tw1_mp"."all_tags"->>'office', "tw1_mp"."all_tags"->>'shop', "tw1_mp"."all_tags"->>'sport', "tw1_mp"."all_tags"->>'vending') IS NOT NULL
+	COALESCE("tw1_mp"."all_tags"->>'amenity', "tw1_mp"."all_tags"->>'emergency', "tw1_mp"."all_tags"->>'highway', "tw1_mp"."all_tags"->>'historic', "tw1_mp"."all_tags"->>'landuse', "tw1_mp"."all_tags"->>'leisure', "tw1_mp"."all_tags"->>'man_made', "tw1_mp"."all_tags"->>'office', "tw1_mp"."all_tags"->>'shop', "tw1_mp"."all_tags"->>'sport', "tw1_mp"."all_tags"->>'vending') IS NOT NULL
  )
 ),
 "qw_pi" AS (SELECT
+	ROW_NUMBER() OVER (ORDER BY "tw2_px"."osm_id" ASC NULLS LAST, "tw2_px"."osm_way_id" ASC NULLS LAST) AS "ogc_fid",
 	"tw2_px"."osm_id",
 	"tw2_px"."osm_way_id",
 	"tw2_px"."lastchange",
 	("tw2_px"."all_tags"->>'name')::VARCHAR(100) AS "name",
+	("tw2_px"."all_tags"->>'name')::VARCHAR(32) AS "ref",
+	("tw2_px"."all_tags"->>'notes')::VARCHAR(256) AS "notes",
 	(CASE
 		WHEN ("tw2_px"."all_tags"->>'layer' ~ '^[0-9]+$') THEN "tw2_px"."all_tags"->>'layer'
 		ELSE NULL
@@ -612,325 +618,341 @@ WITH "qw_mx" AS (SELECT
 	END)::VARCHAR(32) AS "tunnel_v",
 	LOWER("tw2_px"."all_tags"->>'access')::VARCHAR(16) AS "access",
 	(CASE
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'police') THEN 2001
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'fire_station') THEN 2002
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'post_box') THEN 2004
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'post_office') THEN 2005
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'telephone') THEN 2006
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'library') THEN 2007
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'townhall') THEN 2008
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'courthouse') THEN 2009
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'prison') THEN 2010
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'embassy') OR ("tw2_px"."all_tags"->>'office' = 'diplomatic')) THEN 2011
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'community_centre') THEN 2012
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'nursing_home') THEN 2013
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'arts_centre') THEN 2014
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'grave_yard') OR ("tw2_px"."all_tags"->>'landuse' = 'cemetery')) THEN 2015
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'marketplace') THEN 2016
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND (("tw2_px"."all_tags"->>'recycling:glass' IN ('1', 'true', 'yes')) OR ("tw2_px"."all_tags"->>'recycling:glass_bottles' IN ('1', 'true', 'yes')))) THEN 2031
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND ("tw2_px"."all_tags"->>'recycling:paper' IN ('1', 'true', 'yes'))) THEN 2032
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND ("tw2_px"."all_tags"->>'recycling:clothes' IN ('1', 'true', 'yes'))) THEN 2033
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND ("tw2_px"."all_tags"->>'recycling:scrap_metal' IN ('1', 'true', 'yes'))) THEN 2034
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'recycling') THEN 2030
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'university') THEN 2081
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'school') THEN 2081
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'kindergarten') THEN 2083
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'college') THEN 2084
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'public_building') THEN 2099
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'pharmacy') THEN 2101
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'hospital') THEN 2110
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'clinic') THEN 2111
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'doctors') THEN 2120
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'dentist') THEN 2121
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'veterinary') THEN 2129
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'theatre') THEN 2201
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'nightclub') THEN 2202
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'cinema') THEN 2203
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'park') OR ("tw2_px"."all_tags"->>'leisure' = 'park')) THEN 2204
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'playground') OR ("tw2_px"."all_tags"->>'leisure' = 'playground')) THEN 2205
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'dog_park') OR ("tw2_px"."all_tags"->>'leisure' = 'dog_park')) THEN 2206
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'sports_centre') OR ("tw2_px"."all_tags"->>'leisure' = 'sports_centre')) THEN 2251
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'pitch') OR ("tw2_px"."all_tags"->>'leisure' = 'pitch')) THEN 2252
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'swimming_pool') OR ("tw2_px"."all_tags"->>'leisure' IN ('swimming_pool', 'water_park')) OR ("tw2_px"."all_tags"->>'sport' = 'swimming')) THEN 2253
-		WHEN ("tw2_px"."all_tags"->>'sport' = 'tennis') THEN 2254
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'golf_course') OR ("tw2_px"."all_tags"->>'leisure' = 'golf_course')) THEN 2255
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'stadium') OR ("tw2_px"."all_tags"->>'leisure' = 'stadium')) THEN 2256
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'ice_rink') OR ("tw2_px"."all_tags"->>'leisure' = 'ice_rink')) THEN 2257
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'restaurant') THEN 2301
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'fast_food') THEN 2302
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'cafe') THEN 2303
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'pub') THEN 2304
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bar') THEN 2305
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'food_court') THEN 2306
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'biergarten') THEN 2307
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'hotel') OR ("tw2_px"."all_tags"->>'tourism' = 'hotel')) THEN 2401
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'motel') OR ("tw2_px"."all_tags"->>'tourism' = 'motel')) THEN 2402
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'bed_and_breakfast') OR ("tw2_px"."all_tags"->>'tourism' = 'bed_and_breakfast')) THEN 2403
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'guest_house') OR ("tw2_px"."all_tags"->>'tourism' = 'guest_house')) THEN 2404
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'hostel') OR ("tw2_px"."all_tags"->>'tourism' = 'hostel')) THEN 2405
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'chalet') OR ("tw2_px"."all_tags"->>'tourism' = 'chalet')) THEN 2406
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'shelter') OR ("tw2_px"."all_tags"->>'tourism' = 'shelter')) THEN 2421
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'camp_site') OR ("tw2_px"."all_tags"->>'tourism' = 'camp_site')) THEN 2422
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'alpine_hut') OR ("tw2_px"."all_tags"->>'tourism' = 'alpine_hut')) THEN 2423
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'caravan_site') OR ("tw2_px"."all_tags"->>'tourism' = 'caravan_site')) THEN 2424
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'supermarket') THEN 2501
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'bakery') THEN 2502
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'kiosk') THEN 2503
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'mall') THEN 2504
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'department_store') THEN 2505
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'general') THEN 2510
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'convenience') THEN 2511
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'clothes') THEN 2512
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'florist') THEN 2513
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'chemist') THEN 2514
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'books') THEN 2515
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'butcher') THEN 2516
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'shoes') THEN 2517
-		WHEN (("tw2_px"."all_tags"->>'shop' = 'alcohol') OR ("tw2_px"."all_tags"->>'shop' = 'beverages')) THEN 2518
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'optician') THEN 2519
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'jewelry') THEN 2520
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'gift') THEN 2521
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'sports') THEN 2522
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'stationery') THEN 2523
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'outdoor') THEN 2524
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'mobile_phone') THEN 2525
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'toys') THEN 2526
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'newsagent') THEN 2527
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'greengrocer') THEN 2528
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'beauty') THEN 2529
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'video') THEN 2530
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'car') THEN 2541
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'bicycle') THEN 2542
-		WHEN (("tw2_px"."all_tags"->>'shop' = 'doityourself') OR ("tw2_px"."all_tags"->>'shop' = 'hardware')) THEN 2543
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'furniture') THEN 2544
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'computer') THEN 2546
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'garden_centre') THEN 2547
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'hairdresser') THEN 2561
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'car_repair') THEN 2562
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'car_rental') THEN 2563
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'car_wash') THEN 2564
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'car_sharing') THEN 2565
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bicycle_rental') THEN 2566
-		WHEN ("tw2_px"."all_tags"->>'shop' = 'travel_agency') THEN 2567
-		WHEN (("tw2_px"."all_tags"->>'shop' = 'laundry') OR ("tw2_px"."all_tags"->>'shop' = 'dry_cleaning')) THEN 2568
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'vending_machine') OR ("tw2_px"."all_tags"->>'vending' = 'cigarettes')) THEN 2591
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'vending_machine') OR ("tw2_px"."all_tags"->>'vending' = 'parking_tickets')) THEN 2592
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'vending_machine') THEN 2590
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bank') THEN 2601
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'atm') THEN 2602
-		WHEN (("tw2_px"."all_tags"->>'tourism' = 'information') AND ("tw2_px"."all_tags"->>'information' = 'map')) THEN 2704
-		WHEN (("tw2_px"."all_tags"->>'tourism' = 'information') AND ("tw2_px"."all_tags"->>'information' = 'board')) THEN 2705
-		WHEN (("tw2_px"."all_tags"->>'tourism' = 'information') AND ("tw2_px"."all_tags"->>'information' = 'guidepost')) THEN 2706
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'information') THEN 2701
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'attraction') THEN 2721
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'museum') THEN 2722
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'monument') THEN 2723
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'memorial') THEN 2724
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'artwork') THEN 2725
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'castle') THEN 2731
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'ruins') THEN 2732
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'archaeological_site') THEN 2733
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'wayside_cross') THEN 2734
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'wayside_shrine') THEN 2735
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'battlefield') THEN 2736
-		WHEN ("tw2_px"."all_tags"->>'historic' = 'fort') THEN 2737
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'picnic_site') THEN 2741
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'viewpoint') THEN 2742
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'zoo') THEN 2743
-		WHEN ("tw2_px"."all_tags"->>'tourism' = 'theme_park') THEN 2744
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'toilets') THEN 2901
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bench') THEN 2902
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'drinking_water') THEN 2903
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'fountain') THEN 2904
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'hunting_stand') THEN 2905
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'waste_basket') THEN 2906
-		WHEN ("tw2_px"."all_tags"->>'amenity' = 'surveillance') THEN 2907
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'emergency_phone') OR ("tw2_px"."all_tags"->>'emergency' = 'phone')) THEN 2921
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'fire_hydrant') OR ("tw2_px"."all_tags"->>'emergency' = 'fire_hydrant')) THEN 2922
-		WHEN (("tw2_px"."all_tags"->>'amenity' = 'emergency_access_point') OR ("tw2_px"."all_tags"->>'highway' = 'emergency_access_point')) THEN 2923
-		WHEN (("tw2_px"."all_tags"->>'man_made' = 'tower') AND ("tw2_px"."all_tags"->>'tower:type' = 'communication')) THEN 2951
-		WHEN (("tw2_px"."all_tags"->>'man_made' = 'water_tower') OR (("tw2_px"."all_tags"->>'man_made' = 'tower') AND ("tw2_px"."all_tags"->>'tower:type' = 'water'))) THEN 2952
-		WHEN (("tw2_px"."all_tags"->>'man_made' = 'tower') AND ("tw2_px"."all_tags"->>'tower:type' = 'observation')) THEN 2953
-		WHEN ("tw2_px"."all_tags"->>'man_made' = 'tower') THEN 2950
-		WHEN ("tw2_px"."all_tags"->>'man_made' = 'windmill') THEN 2954
-		WHEN ("tw2_px"."all_tags"->>'man_made' = 'lighthouse') THEN 2955
-		WHEN ("tw2_px"."all_tags"->>'man_made' = 'wastewater_plant') THEN 2961
-		WHEN ("tw2_px"."all_tags"->>'man_made' = 'water_well') THEN 2962
-		WHEN ("tw2_px"."all_tags"->>'man_made' = 'watermill') THEN 2963
-		WHEN ("tw2_px"."all_tags"->>'man_made' = 'water_works') THEN 2964
-	END)::SMALLINT AS "code",
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'police') THEN '{"qxcode": 502001, "gfcode": 2001, "carto_icon": "5/59/Police-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'fire_station') THEN '{"qxcode": 502002, "gfcode": 2002, "carto_icon": "b/b7/Fire-station-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'post_box') THEN '{"qxcode": 502004, "gfcode": 2004, "carto_icon": "d/d4/Post_box-12.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'post_office') THEN '{"qxcode": 502005, "gfcode": 2005, "carto_icon": "e/e1/Post_office-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'telephone') THEN '{"qxcode": 502006, "gfcode": 2006, "carto_icon": "f/fa/Telephone.16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'library') THEN '{"qxcode": 502007, "gfcode": 2007, "carto_icon": "b/b5/Library-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'townhall') THEN '{"qxcode": 502008, "gfcode": 2008, "carto_icon": "a/a3/Town-hall-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'courthouse') THEN '{"qxcode": 502009, "gfcode": 2009, "carto_icon": "d/db/Courthouse-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'prison') THEN '{"qxcode": 502010, "gfcode": 2010, "carto_icon": "d/d0/Prison-16.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'embassy') OR ("tw2_px"."all_tags"->>'office' = 'diplomatic')) THEN '{"qxcode": 502011, "gfcode": 2011, "carto_icon": "f/f5/Diplomatic.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'community_centre') THEN '{"qxcode": 502012, "gfcode": 2012, "carto_icon": "0/0b/Community_centre-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' IN ('nursing_home', 'social_facility')) THEN '{"qxcode": 502013, "gfcode": 2013, "carto_icon": "0/0e/Social_facility-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'arts_centre') THEN '{"qxcode": 502014, "gfcode": 2014, "carto_icon": "b/bf/Arts_centre.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'grave_yard') OR ("tw2_px"."all_tags"->>'landuse' = 'cemetery')) THEN '{"qxcode": 502015, "gfcode": 2015, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'marketplace') THEN '{"qxcode": 502016, "gfcode": 2016, "carto_icon": "1/1c/Marketplace-14.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND (("tw2_px"."all_tags"->>'recycling:glass' IN ('1', 'true', 'yes')) OR ("tw2_px"."all_tags"->>'recycling:glass_bottles' IN ('1', 'true', 'yes')))) THEN '{"qxcode": 502031, "gfcode": 2031, "carto_icon": "1/16/Recycling-16.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND ("tw2_px"."all_tags"->>'recycling:paper' IN ('1', 'true', 'yes'))) THEN '{"qxcode": 502032, "gfcode": 2032, "carto_icon": "1/16/Recycling-16.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND ("tw2_px"."all_tags"->>'recycling:clothes' IN ('1', 'true', 'yes'))) THEN '{"qxcode": 502033, "gfcode": 2033, "carto_icon": "1/16/Recycling-16.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'recycling') AND ("tw2_px"."all_tags"->>'recycling:scrap_metal' IN ('1', 'true', 'yes'))) THEN '{"qxcode": 502034, "gfcode": 2034, "carto_icon": "1/16/Recycling-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'recycling') THEN '{"qxcode": 502030, "gfcode": 2030, "carto_icon": "1/16/Recycling-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'university') THEN '{"qxcode": 502081, "gfcode": 2081, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'school') THEN '{"qxcode": 502081, "gfcode": 2081, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'kindergarten') THEN '{"qxcode": 502083, "gfcode": 2083, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'college') THEN '{"qxcode": 502084, "gfcode": 2084, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'public_building') THEN '{"qxcode": 502099, "gfcode": 2099, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'pharmacy') THEN '{"qxcode": 502101, "gfcode": 2101, "carto_icon": "1/1e/Pharmacy-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'hospital') THEN '{"qxcode": 502110, "gfcode": 2110, "carto_icon": "3/33/Hospital-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'clinic') THEN '{"qxcode": 502111, "gfcode": 2111, "carto_icon": "7/71/Doctors-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'doctors') THEN '{"qxcode": 502120, "gfcode": 2120, "carto_icon": "7/71/Doctors-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'dentist') THEN '{"qxcode": 502121, "gfcode": 2121, "carto_icon": "8/86/Dentist-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'veterinary') THEN '{"qxcode": 502129, "gfcode": 2129, "carto_icon": "f/fc/Veterinary-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'theatre') THEN '{"qxcode": 502201, "gfcode": 2201, "carto_icon": "e/eb/Theatre-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'nightclub') THEN '{"qxcode": 502202, "gfcode": 2202, "carto_icon": "e/ee/Nightclub-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'cinema') THEN '{"qxcode": 502203, "gfcode": 2203, "carto_icon": "3/31/Cinema-16.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'park') OR ("tw2_px"."all_tags"->>'leisure' = 'park')) THEN '{"qxcode": 502204, "gfcode": 2204, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'playground') OR ("tw2_px"."all_tags"->>'leisure' = 'playground')) THEN '{"qxcode": 502205, "gfcode": 2205, "carto_icon": "3/31/Playground-16.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'dog_park') OR ("tw2_px"."all_tags"->>'leisure' = 'dog_park')) THEN '{"qxcode": 502206, "gfcode": 2206, "carto_icon": "d/da/Dog_park.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'sports_centre') OR ("tw2_px"."all_tags"->>'leisure' = 'sports_centre')) THEN '{"qxcode": 502251, "gfcode": 2251, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'pitch') OR ("tw2_px"."all_tags"->>'leisure' = 'pitch')) THEN '{"qxcode": 502252, "gfcode": 2252, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'swimming_pool') OR ("tw2_px"."all_tags"->>'leisure' IN ('swimming_pool', 'water_park')) OR ("tw2_px"."all_tags"->>'sport' = 'swimming')) THEN '{"qxcode": 502253, "gfcode": 2253, "carto_icon": "c/cb/Swimming-16.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'sport' = 'tennis') THEN '{"qxcode": 502254, "gfcode": 2254, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'golf_course') OR ("tw2_px"."all_tags"->>'leisure' = 'golf_course')) THEN '{"qxcode": 502255, "gfcode": 2255, "carto_icon": "d/d2/Golf-icon.svg"}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'stadium') OR ("tw2_px"."all_tags"->>'leisure' = 'stadium')) THEN '{"qxcode": 502256, "gfcode": 2256, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'ice_rink') OR ("tw2_px"."all_tags"->>'leisure' = 'ice_rink')) THEN '{"qxcode": 502257, "gfcode": 2257, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'restaurant') THEN '{"qxcode": 502301, "gfcode": 2301, "carto_icon": "b/bb/Restaurant-14.svg"}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'fast_food') THEN '{"qxcode": 502302, "gfcode": 2302, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'cafe') THEN '{"qxcode": 502303, "gfcode": 2303, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'pub') THEN '{"qxcode": 502304, "gfcode": 2304, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bar') THEN '{"qxcode": 502305, "gfcode": 2305, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'food_court') THEN '{"qxcode": 502306, "gfcode": 2306, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'biergarten') THEN '{"qxcode": 502307, "gfcode": 2307, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'hotel') OR ("tw2_px"."all_tags"->>'tourism' = 'hotel')) THEN '{"qxcode": 502401, "gfcode": 2401, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'motel') OR ("tw2_px"."all_tags"->>'tourism' = 'motel')) THEN '{"qxcode": 502402, "gfcode": 2402, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'bed_and_breakfast') OR ("tw2_px"."all_tags"->>'tourism' = 'bed_and_breakfast')) THEN '{"qxcode": 502403, "gfcode": 2403, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'guest_house') OR ("tw2_px"."all_tags"->>'tourism' = 'guest_house')) THEN '{"qxcode": 502404, "gfcode": 2404, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'hostel') OR ("tw2_px"."all_tags"->>'tourism' = 'hostel')) THEN '{"qxcode": 502405, "gfcode": 2405, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'chalet') OR ("tw2_px"."all_tags"->>'tourism' = 'chalet')) THEN '{"qxcode": 502406, "gfcode": 2406, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'shelter') OR ("tw2_px"."all_tags"->>'tourism' = 'shelter')) THEN '{"qxcode": 502421, "gfcode": 2421, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'camp_site') OR ("tw2_px"."all_tags"->>'tourism' = 'camp_site')) THEN '{"qxcode": 502422, "gfcode": 2422, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'alpine_hut') OR ("tw2_px"."all_tags"->>'tourism' = 'alpine_hut')) THEN '{"qxcode": 502423, "gfcode": 2423, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'caravan_site') OR ("tw2_px"."all_tags"->>'tourism' = 'caravan_site')) THEN '{"qxcode": 502424, "gfcode": 2424, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'supermarket') THEN '{"qxcode": 502501, "gfcode": 2501, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'bakery') THEN '{"qxcode": 502502, "gfcode": 2502, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'kiosk') THEN '{"qxcode": 502503, "gfcode": 2503, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'mall') THEN '{"qxcode": 502504, "gfcode": 2504, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'department_store') THEN '{"qxcode": 502505, "gfcode": 2505, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'general') THEN '{"qxcode": 502510, "gfcode": 2510, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'convenience') THEN '{"qxcode": 502511, "gfcode": 2511, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'clothes') THEN '{"qxcode": 502512, "gfcode": 2512, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'florist') THEN '{"qxcode": 502513, "gfcode": 2513, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'chemist') THEN '{"qxcode": 502514, "gfcode": 2514, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'books') THEN '{"qxcode": 502515, "gfcode": 2515, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'butcher') THEN '{"qxcode": 502516, "gfcode": 2516, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'shoes') THEN '{"qxcode": 502517, "gfcode": 2517, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'shop' = 'alcohol') OR ("tw2_px"."all_tags"->>'shop' = 'beverages')) THEN '{"qxcode": 502518, "gfcode": 2518, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'optician') THEN '{"qxcode": 502519, "gfcode": 2519, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'jewelry') THEN '{"qxcode": 502520, "gfcode": 2520, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'gift') THEN '{"qxcode": 502521, "gfcode": 2521, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'sports') THEN '{"qxcode": 502522, "gfcode": 2522, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'stationery') THEN '{"qxcode": 502523, "gfcode": 2523, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'outdoor') THEN '{"qxcode": 502524, "gfcode": 2524, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'mobile_phone') THEN '{"qxcode": 502525, "gfcode": 2525, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'toys') THEN '{"qxcode": 502526, "gfcode": 2526, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'newsagent') THEN '{"qxcode": 502527, "gfcode": 2527, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'greengrocer') THEN '{"qxcode": 502528, "gfcode": 2528, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'beauty') THEN '{"qxcode": 502529, "gfcode": 2529, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'video') THEN '{"qxcode": 502530, "gfcode": 2530, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'car') THEN '{"qxcode": 502541, "gfcode": 2541, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'bicycle') THEN '{"qxcode": 502542, "gfcode": 2542, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'shop' = 'doityourself') OR ("tw2_px"."all_tags"->>'shop' = 'hardware')) THEN '{"qxcode": 502543, "gfcode": 2543, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'furniture') THEN '{"qxcode": 502544, "gfcode": 2544, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'computer') THEN '{"qxcode": 502546, "gfcode": 2546, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'garden_centre') THEN '{"qxcode": 502547, "gfcode": 2547, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'hairdresser') THEN '{"qxcode": 502561, "gfcode": 2561, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'car_repair') THEN '{"qxcode": 502562, "gfcode": 2562, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'car_rental') THEN '{"qxcode": 502563, "gfcode": 2563, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'car_wash') THEN '{"qxcode": 502564, "gfcode": 2564, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'car_sharing') THEN '{"qxcode": 502565, "gfcode": 2565, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bicycle_rental') THEN '{"qxcode": 502566, "gfcode": 2566, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'shop' = 'travel_agency') THEN '{"qxcode": 502567, "gfcode": 2567, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'shop' = 'laundry') OR ("tw2_px"."all_tags"->>'shop' = 'dry_cleaning')) THEN '{"qxcode": 502568, "gfcode": 2568, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'vending_machine') OR ("tw2_px"."all_tags"->>'vending' = 'cigarettes')) THEN '{"qxcode": 502591, "gfcode": 2591, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'vending_machine') OR ("tw2_px"."all_tags"->>'vending' = 'parking_tickets')) THEN '{"qxcode": 502592, "gfcode": 2592, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'vending_machine') THEN '{"qxcode": 502590, "gfcode": 2590, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bank') THEN '{"qxcode": 502601, "gfcode": 2601, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'atm') THEN '{"qxcode": 502602, "gfcode": 2602, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'tourism' = 'information') AND ("tw2_px"."all_tags"->>'information' = 'map')) THEN '{"qxcode": 502704, "gfcode": 2704, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'tourism' = 'information') AND ("tw2_px"."all_tags"->>'information' = 'board')) THEN '{"qxcode": 502705, "gfcode": 2705, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'tourism' = 'information') AND ("tw2_px"."all_tags"->>'information' = 'guidepost')) THEN '{"qxcode": 502706, "gfcode": 2706, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'information') THEN '{"qxcode": 502701, "gfcode": 2701, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'attraction') THEN '{"qxcode": 502721, "gfcode": 2721, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'museum') THEN '{"qxcode": 502722, "gfcode": 2722, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'monument') THEN '{"qxcode": 502723, "gfcode": 2723, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'memorial') THEN '{"qxcode": 502724, "gfcode": 2724, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'artwork') THEN '{"qxcode": 502725, "gfcode": 2725, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'castle') THEN '{"qxcode": 502731, "gfcode": 2731, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'ruins') THEN '{"qxcode": 502732, "gfcode": 2732, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'archaeological_site') THEN '{"qxcode": 502733, "gfcode": 2733, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'wayside_cross') THEN '{"qxcode": 502734, "gfcode": 2734, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'wayside_shrine') THEN '{"qxcode": 502735, "gfcode": 2735, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'battlefield') THEN '{"qxcode": 502736, "gfcode": 2736, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'historic' = 'fort') THEN '{"qxcode": 502737, "gfcode": 2737, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'picnic_site') THEN '{"qxcode": 502741, "gfcode": 2741, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'viewpoint') THEN '{"qxcode": 502742, "gfcode": 2742, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'zoo') THEN '{"qxcode": 502743, "gfcode": 2743, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'tourism' = 'theme_park') THEN '{"qxcode": 502744, "gfcode": 2744, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'toilets') THEN '{"qxcode": 502901, "gfcode": 2901, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'bench') THEN '{"qxcode": 502902, "gfcode": 2902, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'drinking_water') THEN '{"qxcode": 502903, "gfcode": 2903, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'fountain') THEN '{"qxcode": 502904, "gfcode": 2904, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'hunting_stand') THEN '{"qxcode": 502905, "gfcode": 2905, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'waste_basket') THEN '{"qxcode": 502906, "gfcode": 2906, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'amenity' = 'surveillance') THEN '{"qxcode": 502907, "gfcode": 2907, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'emergency_phone') OR ("tw2_px"."all_tags"->>'emergency' = 'phone')) THEN '{"qxcode": 502921, "gfcode": 2921, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'fire_hydrant') OR ("tw2_px"."all_tags"->>'emergency' = 'fire_hydrant')) THEN '{"qxcode": 502922, "gfcode": 2922, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'amenity' = 'emergency_access_point') OR ("tw2_px"."all_tags"->>'highway' = 'emergency_access_point')) THEN '{"qxcode": 502923, "gfcode": 2923, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'man_made' = 'tower') AND ("tw2_px"."all_tags"->>'tower:type' = 'communication')) THEN '{"qxcode": 502951, "gfcode": 2951, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'man_made' = 'water_tower') OR (("tw2_px"."all_tags"->>'man_made' = 'tower') AND ("tw2_px"."all_tags"->>'tower:type' = 'water'))) THEN '{"qxcode": 502952, "gfcode": 2952, "carto_icon": null}'
+		WHEN (("tw2_px"."all_tags"->>'man_made' = 'tower') AND ("tw2_px"."all_tags"->>'tower:type' = 'observation')) THEN '{"qxcode": 502953, "gfcode": 2953, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'man_made' = 'tower') THEN '{"qxcode": 502950, "gfcode": 2950, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'man_made' = 'windmill') THEN '{"qxcode": 502954, "gfcode": 2954, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'man_made' = 'lighthouse') THEN '{"qxcode": 502955, "gfcode": 2955, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'man_made' = 'wastewater_plant') THEN '{"qxcode": 502961, "gfcode": 2961, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'man_made' = 'water_well') THEN '{"qxcode": 502962, "gfcode": 2962, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'man_made' = 'watermill') THEN '{"qxcode": 502963, "gfcode": 2963, "carto_icon": null}'
+		WHEN ("tw2_px"."all_tags"->>'man_made' = 'water_works') THEN '{"qxcode": 502964, "gfcode": 2964, "carto_icon": null}'
+		ELSE NULL
+	END)::JSONB AS "codes",
 	"tw2_px"."osmgeomsrc",
 	"tw2_px"."geom"
  FROM "qw_mx" AS "tw2_px"
 )
 SELECT
-	"q_px".*,
-	ROW_NUMBER() OVER (ORDER BY "q_px"."osm_id" ASC NULLS LAST, "osm_way_id" ASC NULLS LAST) AS "ogc_fid",
+	"q_px"."ogc_fid",
+	"q_px"."osm_id",
+	"q_px"."osm_way_id",
+	"q_px"."lastchange",
+	"q_px"."osmgeomsrc",
+	"q_px"."geom",
+	"q_px"."name",
+	"q_px"."ref",
+	"q_px"."notes",
+	"q_px"."layer",
+	"q_px"."bridge",
+	"q_px"."bridge_v",
+	"q_px"."tunnel",
+	"q_px"."tunnel_v",
+	"q_px"."access",
+	("q_px"."codes"->>'qxcode')::INTEGER AS "qxcode",
+	("q_px"."codes"->>'gfcode')::SMALLINT AS "code",
+	("q_px"."codes"->>'carto_icon')::VARCHAR(64) AS "icon",
 	(CASE
-		WHEN ("q_px"."code" = 2001) THEN 'police'
-		WHEN ("q_px"."code" = 2002) THEN 'fire_station'
-		WHEN ("q_px"."code" = 2004) THEN 'post_box'
-		WHEN ("q_px"."code" = 2005) THEN 'post_office'
-		WHEN ("q_px"."code" = 2006) THEN 'telephone'
-		WHEN ("q_px"."code" = 2007) THEN 'library'
-		WHEN ("q_px"."code" = 2008) THEN 'town_hall'
-		WHEN ("q_px"."code" = 2009) THEN 'courthouse'
-		WHEN ("q_px"."code" = 2010) THEN 'prison'
-		WHEN ("q_px"."code" = 2011) THEN 'embassy'
-		WHEN ("q_px"."code" = 2012) THEN 'community_centre'
-		WHEN ("q_px"."code" = 2013) THEN 'nursing_home'
-		WHEN ("q_px"."code" = 2014) THEN 'arts_centre'
-		WHEN ("q_px"."code" = 2015) THEN 'graveyard'
-		WHEN ("q_px"."code" = 2016) THEN 'market_place'
-		WHEN ("q_px"."code" = 2030) THEN 'recycling'
-		WHEN ("q_px"."code" = 2031) THEN 'recycling_glass'
-		WHEN ("q_px"."code" = 2032) THEN 'recycling_paper'
-		WHEN ("q_px"."code" = 2033) THEN 'recycling_clothes'
-		WHEN ("q_px"."code" = 2034) THEN 'recycling_metal'
-		WHEN ("q_px"."code" = 2081) THEN 'university'
-		WHEN ("q_px"."code" = 2082) THEN 'school'
-		WHEN ("q_px"."code" = 2083) THEN 'kindergarten'
-		WHEN ("q_px"."code" = 2084) THEN 'college'
-		WHEN ("q_px"."code" = 2099) THEN 'public_building'
-		WHEN ("q_px"."code" = 2101) THEN 'pharmacy'
-		WHEN ("q_px"."code" = 2110) THEN 'hospital'
-		WHEN ("q_px"."code" = 2111) THEN 'clinic'
-		WHEN ("q_px"."code" = 2120) THEN 'doctors'
-		WHEN ("q_px"."code" = 2121) THEN 'dentist'
-		WHEN ("q_px"."code" = 2129) THEN 'veterinary'
-		WHEN ("q_px"."code" = 2201) THEN 'theatre'
-		WHEN ("q_px"."code" = 2202) THEN 'nightclub'
-		WHEN ("q_px"."code" = 2203) THEN 'cinema'
-		WHEN ("q_px"."code" = 2204) THEN 'park'
-		WHEN ("q_px"."code" = 2205) THEN 'playground'
-		WHEN ("q_px"."code" = 2206) THEN 'dog_park'
-		WHEN ("q_px"."code" = 2251) THEN 'sports_centre'
-		WHEN ("q_px"."code" = 2252) THEN 'pitch'
-		WHEN ("q_px"."code" = 2253) THEN 'swimming_pool'
-		WHEN ("q_px"."code" = 2254) THEN 'tennis_court'
-		WHEN ("q_px"."code" = 2255) THEN 'golf_course'
-		WHEN ("q_px"."code" = 2256) THEN 'stadium'
-		WHEN ("q_px"."code" = 2257) THEN 'ice_rink'
-		WHEN ("q_px"."code" = 2301) THEN 'restaurant'
-		WHEN ("q_px"."code" = 2302) THEN 'fast_food'
-		WHEN ("q_px"."code" = 2303) THEN 'cafe'
-		WHEN ("q_px"."code" = 2304) THEN 'pub'
-		WHEN ("q_px"."code" = 2305) THEN 'bar'
-		WHEN ("q_px"."code" = 2306) THEN 'food_court'
-		WHEN ("q_px"."code" = 2307) THEN 'biergarten'
-		WHEN ("q_px"."code" = 2401) THEN 'hotel'
-		WHEN ("q_px"."code" = 2402) THEN 'motel'
-		WHEN ("q_px"."code" = 2403) THEN 'bed_and_breakfast'
-		WHEN ("q_px"."code" = 2404) THEN 'guesthouse'
-		WHEN ("q_px"."code" = 2405) THEN 'hostel'
-		WHEN ("q_px"."code" = 2406) THEN 'chalet'
-		WHEN ("q_px"."code" = 2421) THEN 'shelter'
-		WHEN ("q_px"."code" = 2422) THEN 'camp_site'
-		WHEN ("q_px"."code" = 2423) THEN 'alpine_hut'
-		WHEN ("q_px"."code" = 2424) THEN 'caravan_site'
-		WHEN ("q_px"."code" = 2501) THEN 'supermarket'
-		WHEN ("q_px"."code" = 2502) THEN 'bakery'
-		WHEN ("q_px"."code" = 2503) THEN 'kiosk'
-		WHEN ("q_px"."code" = 2504) THEN 'mall'
-		WHEN ("q_px"."code" = 2505) THEN 'department_store'
-		WHEN ("q_px"."code" = 2510) THEN 'general'
-		WHEN ("q_px"."code" = 2511) THEN 'convenience'
-		WHEN ("q_px"."code" = 2512) THEN 'clothes'
-		WHEN ("q_px"."code" = 2513) THEN 'florist'
-		WHEN ("q_px"."code" = 2514) THEN 'chemist'
-		WHEN ("q_px"."code" = 2515) THEN 'bookshop'
-		WHEN ("q_px"."code" = 2516) THEN 'butcher'
-		WHEN ("q_px"."code" = 2517) THEN 'shoe_shop'
-		WHEN ("q_px"."code" = 2518) THEN 'beverages'
-		WHEN ("q_px"."code" = 2519) THEN 'optician'
-		WHEN ("q_px"."code" = 2520) THEN 'jeweller'
-		WHEN ("q_px"."code" = 2521) THEN 'gift_shop'
-		WHEN ("q_px"."code" = 2522) THEN 'sports_shop'
-		WHEN ("q_px"."code" = 2523) THEN 'stationery'
-		WHEN ("q_px"."code" = 2524) THEN 'outdoor_shop'
-		WHEN ("q_px"."code" = 2525) THEN 'mobile_phone_shop'
-		WHEN ("q_px"."code" = 2526) THEN 'toy_shop'
-		WHEN ("q_px"."code" = 2527) THEN 'newsagent'
-		WHEN ("q_px"."code" = 2528) THEN 'greengrocer'
-		WHEN ("q_px"."code" = 2529) THEN 'beauty_shop'
-		WHEN ("q_px"."code" = 2530) THEN 'video_shop'
-		WHEN ("q_px"."code" = 2541) THEN 'car_dealership'
-		WHEN ("q_px"."code" = 2542) THEN 'bicycle_shop'
-		WHEN ("q_px"."code" = 2543) THEN 'doityourself'
-		WHEN ("q_px"."code" = 2544) THEN 'furniture_shop'
-		WHEN ("q_px"."code" = 2546) THEN 'computer_shop'
-		WHEN ("q_px"."code" = 2547) THEN 'garden_centre'
-		WHEN ("q_px"."code" = 2561) THEN 'hairdresser'
-		WHEN ("q_px"."code" = 2562) THEN 'car_repair'
-		WHEN ("q_px"."code" = 2563) THEN 'car_rental'
-		WHEN ("q_px"."code" = 2564) THEN 'car_wash'
-		WHEN ("q_px"."code" = 2565) THEN 'car_sharing'
-		WHEN ("q_px"."code" = 2566) THEN 'bicycle_rental'
-		WHEN ("q_px"."code" = 2567) THEN 'travel_agent'
-		WHEN ("q_px"."code" = 2568) THEN 'laundry'
-		WHEN ("q_px"."code" = 2590) THEN 'vending_machine'
-		WHEN ("q_px"."code" = 2591) THEN 'vending_cigarette'
-		WHEN ("q_px"."code" = 2592) THEN 'vending_parking'
-		WHEN ("q_px"."code" = 2601) THEN 'bank'
-		WHEN ("q_px"."code" = 2602) THEN 'atm'
-		WHEN ("q_px"."code" = 2701) THEN 'tourist_info'
-		WHEN ("q_px"."code" = 2704) THEN 'tourist_map'
-		WHEN ("q_px"."code" = 2705) THEN 'tourist_board'
-		WHEN ("q_px"."code" = 2706) THEN 'tourist_guidepost'
-		WHEN ("q_px"."code" = 2721) THEN 'attraction'
-		WHEN ("q_px"."code" = 2722) THEN 'museum'
-		WHEN ("q_px"."code" = 2723) THEN 'monument'
-		WHEN ("q_px"."code" = 2724) THEN 'memorial'
-		WHEN ("q_px"."code" = 2725) THEN 'art'
-		WHEN ("q_px"."code" = 2731) THEN 'castle'
-		WHEN ("q_px"."code" = 2732) THEN 'ruins'
-		WHEN ("q_px"."code" = 2733) THEN 'archaeological'
-		WHEN ("q_px"."code" = 2734) THEN 'wayside_cross'
-		WHEN ("q_px"."code" = 2735) THEN 'wayside_shrine'
-		WHEN ("q_px"."code" = 2736) THEN 'battlefield'
-		WHEN ("q_px"."code" = 2737) THEN 'fort'
-		WHEN ("q_px"."code" = 2741) THEN 'picnic_site'
-		WHEN ("q_px"."code" = 2742) THEN 'viewpoint'
-		WHEN ("q_px"."code" = 2743) THEN 'zoo'
-		WHEN ("q_px"."code" = 2744) THEN 'theme_park'
-		WHEN ("q_px"."code" = 2901) THEN 'toilet'
-		WHEN ("q_px"."code" = 2902) THEN 'bench'
-		WHEN ("q_px"."code" = 2903) THEN 'drinking_water'
-		WHEN ("q_px"."code" = 2904) THEN 'fountain'
-		WHEN ("q_px"."code" = 2905) THEN 'hunting_stand'
-		WHEN ("q_px"."code" = 2906) THEN 'waste_basket'
-		WHEN ("q_px"."code" = 2907) THEN 'camera_surveillance'
-		WHEN ("q_px"."code" = 2921) THEN 'emergency_phone'
-		WHEN ("q_px"."code" = 2922) THEN 'fire_hydrant'
-		WHEN ("q_px"."code" = 2923) THEN 'emergency_access'
-		WHEN ("q_px"."code" = 2950) THEN 'tower'
-		WHEN ("q_px"."code" = 2951) THEN 'tower_comms'
-		WHEN ("q_px"."code" = 2952) THEN 'water_tower'
-		WHEN ("q_px"."code" = 2953) THEN 'tower_observation'
-		WHEN ("q_px"."code" = 2954) THEN 'windmill'
-		WHEN ("q_px"."code" = 2955) THEN 'lighthouse'
-		WHEN ("q_px"."code" = 2961) THEN 'wastewater_plant'
-		WHEN ("q_px"."code" = 2962) THEN 'water_well'
-		WHEN ("q_px"."code" = 2963) THEN 'water_mill'
-		WHEN ("q_px"."code" = 2964) THEN 'water_works'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502001) THEN 'police'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502002) THEN 'fire_station'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502004) THEN 'post_box'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502005) THEN 'post_office'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502006) THEN 'telephone'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502007) THEN 'library'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502008) THEN 'town_hall'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502009) THEN 'courthouse'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502010) THEN 'prison'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502011) THEN 'embassy'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502012) THEN 'community_centre'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502013) THEN 'nursing_home'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502014) THEN 'arts_centre'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502015) THEN 'graveyard'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502016) THEN 'market_place'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502030) THEN 'recycling'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502031) THEN 'recycling_glass'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502032) THEN 'recycling_paper'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502033) THEN 'recycling_clothes'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502034) THEN 'recycling_metal'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502081) THEN 'university'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502082) THEN 'school'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502083) THEN 'kindergarten'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502084) THEN 'college'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502099) THEN 'public_building'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502101) THEN 'pharmacy'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502110) THEN 'hospital'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502111) THEN 'clinic'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502120) THEN 'doctors'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502121) THEN 'dentist'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502129) THEN 'veterinary'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502201) THEN 'theatre'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502202) THEN 'nightclub'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502203) THEN 'cinema'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502204) THEN 'park'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502205) THEN 'playground'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502206) THEN 'dog_park'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502251) THEN 'sports_centre'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502252) THEN 'pitch'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502253) THEN 'swimming_pool'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502254) THEN 'tennis_court'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502255) THEN 'golf_course'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502256) THEN 'stadium'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502257) THEN 'ice_rink'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502301) THEN 'restaurant'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502302) THEN 'fast_food'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502303) THEN 'cafe'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502304) THEN 'pub'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502305) THEN 'bar'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502306) THEN 'food_court'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502307) THEN 'biergarten'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502401) THEN 'hotel'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502402) THEN 'motel'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502403) THEN 'bed_and_breakfast'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502404) THEN 'guesthouse'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502405) THEN 'hostel'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502406) THEN 'chalet'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502421) THEN 'shelter'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502422) THEN 'camp_site'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502423) THEN 'alpine_hut'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502424) THEN 'caravan_site'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502501) THEN 'supermarket'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502502) THEN 'bakery'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502503) THEN 'kiosk'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502504) THEN 'mall'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502505) THEN 'department_store'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502510) THEN 'general'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502511) THEN 'convenience'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502512) THEN 'clothes'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502513) THEN 'florist'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502514) THEN 'chemist'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502515) THEN 'bookshop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502516) THEN 'butcher'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502517) THEN 'shoe_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502518) THEN 'beverages'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502519) THEN 'optician'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502520) THEN 'jeweller'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502521) THEN 'gift_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502522) THEN 'sports_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502523) THEN 'stationery'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502524) THEN 'outdoor_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502525) THEN 'mobile_phone_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502526) THEN 'toy_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502527) THEN 'newsagent'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502528) THEN 'greengrocer'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502529) THEN 'beauty_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502530) THEN 'video_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502541) THEN 'car_dealership'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502542) THEN 'bicycle_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502543) THEN 'doityourself'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502544) THEN 'furniture_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502546) THEN 'computer_shop'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502547) THEN 'garden_centre'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502561) THEN 'hairdresser'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502562) THEN 'car_repair'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502563) THEN 'car_rental'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502564) THEN 'car_wash'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502565) THEN 'car_sharing'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502566) THEN 'bicycle_rental'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502567) THEN 'travel_agent'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502568) THEN 'laundry'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502590) THEN 'vending_machine'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502591) THEN 'vending_cigarette'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502592) THEN 'vending_parking'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502601) THEN 'bank'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502602) THEN 'atm'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502701) THEN 'tourist_info'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502704) THEN 'tourist_map'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502705) THEN 'tourist_board'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502706) THEN 'tourist_guidepost'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502721) THEN 'attraction'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502722) THEN 'museum'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502723) THEN 'monument'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502724) THEN 'memorial'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502725) THEN 'art'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502731) THEN 'castle'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502732) THEN 'ruins'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502733) THEN 'archaeological'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502734) THEN 'wayside_cross'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502735) THEN 'wayside_shrine'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502736) THEN 'battlefield'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502737) THEN 'fort'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502741) THEN 'picnic_site'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502742) THEN 'viewpoint'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502743) THEN 'zoo'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502744) THEN 'theme_park'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502901) THEN 'toilet'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502902) THEN 'bench'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502903) THEN 'drinking_water'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502904) THEN 'fountain'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502905) THEN 'hunting_stand'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502906) THEN 'waste_basket'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502907) THEN 'camera_surveillance'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502921) THEN 'emergency_phone'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502922) THEN 'fire_hydrant'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502923) THEN 'emergency_access'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502950) THEN 'tower'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502951) THEN 'tower_comms'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502952) THEN 'water_tower'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502953) THEN 'tower_observation'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502954) THEN 'windmill'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502955) THEN 'lighthouse'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502961) THEN 'wastewater_plant'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502962) THEN 'water_well'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502963) THEN 'water_mill'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER = 502964) THEN 'water_works'
 		ELSE NULL
 	END)::VARCHAR(40) AS "fclass",
 	(CASE
-		WHEN ("q_px"."code" BETWEEN 2001 AND 2099) THEN 'public'
-		WHEN ("q_px"."code" BETWEEN 2101 AND 2199) THEN 'health'
-		WHEN ("q_px"."code" BETWEEN 2201 AND 2299) THEN 'leisure'
-		WHEN ("q_px"."code" BETWEEN 2301 AND 2399) THEN 'catering'
-		WHEN ("q_px"."code" BETWEEN 2401 AND 2499) THEN 'accommodation'
-		WHEN ("q_px"."code" BETWEEN 2501 AND 2599) THEN 'shopping'
-		WHEN ("q_px"."code" BETWEEN 2601 AND 2699) THEN 'money'
-		WHEN ("q_px"."code" BETWEEN 2701 AND 2799) THEN 'tourism'
-		WHEN ("q_px"."code" BETWEEN 2901 AND 2999) THEN 'miscpoi'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502001 AND 502099) THEN 'public'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502101 AND 502199) THEN 'health'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502201 AND 502299) THEN 'leisure'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502301 AND 502399) THEN 'catering'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502401 AND 502499) THEN 'accommodation'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502501 AND 502599) THEN 'shopping'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502601 AND 502699) THEN 'money'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502701 AND 502799) THEN 'tourism'
+		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502901 AND 502999) THEN 'miscpoi'
 		ELSE NULL
-	END)::VARCHAR(16) AS "fxcateg",
-	true AS "aal"
+	END)::VARCHAR(16) AS "fxcateg"
  FROM "qw_pi" AS "q_px"
  WHERE (
-	"q_px"."code" IS NOT NULL
+	"q_px"."codes"->>'qxcode' IS NOT NULL
  )
  ORDER BY
 	"ogc_fid" ASC;
@@ -940,6 +962,7 @@ CREATE UNIQUE INDEX "qoxm_pois_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm
 CREATE UNIQUE INDEX "qoxm_pois_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("osm_way_id" ASC);
 CREATE INDEX "qoxm_pois_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("lastchange" ASC);
 CREATE INDEX "qoxm_pois_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("code" ASC);
+CREATE INDEX "qoxm_pois_qxcode_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("qxcode" ASC);
 CREATE INDEX "qoxm_pois_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("fclass" ASC);
 CREATE INDEX "qoxm_pois_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "gist" ("geom");
 
