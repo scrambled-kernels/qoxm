@@ -58,6 +58,7 @@ DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" CASCA
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" CASCADE;
 
 ALTER TABLE "${OSM_DATA_TABLES_SCHEMA}"."lines" ALTER COLUMN "all_tags" TYPE "jsonb" USING ("all_tags"::JSONB);
 ALTER TABLE "${OSM_DATA_TABLES_SCHEMA}"."multilinestrings" ALTER COLUMN "all_tags" TYPE "jsonb" USING ("all_tags"::JSONB);
@@ -222,8 +223,9 @@ WITH
 	END)::SMALLINT AS "minspeed",
 	(CASE
 		WHEN ("q1w_ro"."all_tags"->>'layer' ~ '^[0-9]+$') THEN "q1w_ro"."all_tags"->>'layer'
-		ELSE NULL
+		ELSE '0'
 	END)::SMALLINT AS "layer",
+	("q1w_ro"."all_tags"->>'layer')::VARCHAR AS "layer_v",
 	(CASE
 		WHEN (("q1w_ro"."all_tags"->>'bridge' IS NOT NULL) AND ("q1w_ro"."all_tags"->>'bridge' ~ '.+')) THEN 1
 		ELSE 0
@@ -322,7 +324,7 @@ SELECT
 	NULL AS "aal"
  FROM "q2w_ro" AS "q_ro"
  WHERE (
-		("q_ro"."code" > 5100) AND ("q_ro"."code" <=5199)
+		("q_ro"."code" > 5100) AND ("q_ro"."code" <= 5199)
 );
 
 CREATE UNIQUE INDEX "qoxm_roads_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("ogc_fid" ASC);
@@ -598,8 +600,9 @@ WITH "qw_mx" AS (SELECT
 	("tw2_px"."all_tags"->>'notes')::VARCHAR(256) AS "notes",
 	(CASE
 		WHEN ("tw2_px"."all_tags"->>'layer' ~ '^[0-9]+$') THEN "tw2_px"."all_tags"->>'layer'
-		ELSE NULL
+		ELSE '0'
 	END)::SMALLINT AS "layer",
+	("tw2_px"."all_tags"->>'layer')::VARCHAR AS "layer_v",
 	(CASE
 		WHEN (("tw2_px"."all_tags"->>'bridge' IS NOT NULL) AND ("tw2_px"."all_tags"->>'bridge' ~ '.+')) THEN 1
 		ELSE 0
@@ -784,6 +787,7 @@ SELECT
 	"q_px"."ref",
 	"q_px"."notes",
 	"q_px"."layer",
+	"q_px"."layer_v",
 	"q_px"."bridge",
 	"q_px"."bridge_v",
 	"q_px"."tunnel",
@@ -971,6 +975,158 @@ CREATE INDEX "qoxm_pois_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USI
 CREATE INDEX "qoxm_pois_qxcode_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("qxcode" ASC);
 CREATE INDEX "qoxm_pois_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("fclass" ASC);
 CREATE INDEX "qoxm_pois_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "gist" ("geom");
+
+CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" AS
+WITH
+"q1w_rl" AS (SELECT
+	"tw1_li".*,
+	(CASE
+		WHEN ("tw1_li"."all_tags"->>'aerialway' = 'proposed') THEN JSONB_BUILD_OBJECT('class', 'aerialway', 'type', "tw1_li"."all_tags"->>'proposed', 'status', 'proposed')
+		WHEN ("tw1_li"."all_tags"->>'railway' = 'proposed') THEN JSONB_BUILD_OBJECT('class', 'railway', 'type', "tw1_li"."all_tags"->>'proposed', 'status', 'proposed')
+		WHEN ("tw1_li"."all_tags"->>'aerialway' = 'construction') THEN JSONB_BUILD_OBJECT('class', 'aerialway', 'type', "tw1_li"."all_tags"->>'aerialway', 'status', 'aerialway')
+		WHEN ("tw1_li"."all_tags"->>'railway' = 'construction') THEN JSONB_BUILD_OBJECT('class', 'railway', 'type', "tw1_li"."all_tags"->>'construction', 'status', 'construction')
+		WHEN (("tw1_li"."all_tags"->>'aerialway' = 'abandoned') OR ("tw1_li"."all_tags"->>'abandoned:aerialway' IS NOT NULL)) THEN JSONB_BUILD_OBJECT('class', 'aerialway', 'type', "tw1_li"."all_tags"->>'abandoned:aerialway', 'status', 'abandoned')
+		WHEN (("tw1_li"."all_tags"->>'railway' = 'abandoned') OR ("tw1_li"."all_tags"->>'abandoned:railway' IS NOT NULL)) THEN JSONB_BUILD_OBJECT('class', 'railway', 'type', "tw1_li"."all_tags"->>'abandoned:railway', 'status', 'abandoned')
+		WHEN (("tw1_li"."all_tags"->>'aerialway' = 'disused') OR ("tw1_li"."all_tags"->>'disused:aerialway' IS NOT NULL)) THEN JSONB_BUILD_OBJECT('class', 'aerialway', 'type', "tw1_li"."all_tags"->>'disused:aerialway', 'status', 'disused')
+		WHEN (("tw1_li"."all_tags"->>'railway' = 'disused') OR ("tw1_li"."all_tags"->>'disused:railway' IS NOT NULL)) THEN JSONB_BUILD_OBJECT('class', 'railway', 'type', "tw1_li"."all_tags"->>'disused:railway', 'status', 'disused')
+		WHEN ("tw1_li"."all_tags"->>'aerialway' IS NOT NULL) THEN JSONB_BUILD_OBJECT('class', 'aerialway', 'type', "tw1_li"."all_tags"->>'railway', 'status', 'operational')
+		WHEN ("tw1_li"."all_tags"->>'railway' IS NOT NULL) THEN JSONB_BUILD_OBJECT('class', 'railway', 'type', "tw1_li"."all_tags"->>'railway', 'status', 'operational')
+		-- obliterated/dismantled/razed lines are not present
+		ELSE NULL
+	END) AS "_way_data_key"
+ FROM "${OSM_DATA_TABLES_SCHEMA}"."lines" AS "tw1_li"
+ WHERE (
+	("tw1_li"."all_tags"->>'railway' IS NOT NULL)
+	OR ("tw1_li"."all_tags"->>'aerialway' IS NOT NULL)
+ )
+),
+"q2w_rl" AS (SELECT
+	ROW_NUMBER() OVER (ORDER BY "q1w_rl"."osm_id" ASC) AS "ogc_fid",
+	"q1w_rl"."osm_id"::BIGINT,
+	"q1w_rl"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	(CASE
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND ("q1w_rl"."_way_data_key"->>'type' = 'light_rail')) THEN '{"qxcode": 506102, "gfcode": 6102}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND ("q1w_rl"."_way_data_key"->>'type' = 'subway')) THEN '{"qxcode": 506103, "gfcode": 6103}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND ("q1w_rl"."_way_data_key"->>'type' = 'tram')) THEN '{"qxcode": 506104, "gfcode": 6104}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND ("q1w_rl"."_way_data_key"->>'type' = 'monorail')) THEN '{"qxcode": 506105, "gfcode": 6105}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND ("q1w_rl"."_way_data_key"->>'type' = 'narrow_gauge')) THEN '{"qxcode": 506106, "gfcode": 6106}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND ("q1w_rl"."_way_data_key"->>'type' = 'miniature')) THEN '{"qxcode": 506107, "gfcode": 6107}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND (("q1w_rl"."_way_data_key"->>'type' = 'funicular') OR (("q1w_rl"."_way_data_key"->>'type' = 'rail') AND ("q1w_rl"."all_tags"->>'traction' = 'funicular')))) THEN '{"qxcode": 506108, "gfcode": 6108}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND (("q1w_rl"."_way_data_key"->>'type' = 'rack') OR (("q1w_rl"."_way_data_key"->>'type' = 'rail') AND ("q1w_rl"."all_tags"->>'traction' = 'rack')) OR (("q1w_rl"."_way_data_key"->>'type' = 'rail') AND ("q1w_rl"."all_tags"->>'rack' IN ('1', 'true', 'yes'))))) THEN '{"qxcode": 506109, "gfcode": 6109}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'railway') AND ("q1w_rl"."_way_data_key"->>'type' IN ('rail', 'yes'))) THEN '{"qxcode": 506101, "gfcode": 6101}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'aerialway') AND ("q1w_rl"."_way_data_key"->>'type' = 'drag_lift')) THEN '{"qxcode": 506111, "gfcode": 6111}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'aerialway') AND ("q1w_rl"."_way_data_key"->>'type' IN ('chair_lift', 'high_speed_chair_lift'))) THEN '{"qxcode": 506112, "gfcode": 6112}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'aerialway') AND ("q1w_rl"."_way_data_key"->>'type' = 'cable_car')) THEN '{"qxcode": 506113, "gfcode": 6113}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'aerialway') AND ("q1w_rl"."_way_data_key"->>'type' = 'gondola')) THEN '{"qxcode": 506114, "gfcode": 6114}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'aerialway') AND ("q1w_rl"."_way_data_key"->>'type' = 'goods')) THEN '{"qxcode": 506115, "gfcode": 6115}'
+		WHEN (("q1w_rl"."_way_data_key"->>'class' = 'aerialway') AND ("q1w_rl"."_way_data_key"->>'type' IN ('platter', 't-bar', 'j-bar', 'magic_carpet', 'zip_line', 'rope_tow', 'mixed_lif'))) THEN '{"qxcode": 506119, "gfcode": 6119}'
+		ELSE NULL
+	END)::JSONB AS "codes",
+	"q1w_rl"."_way_data_key"->>'status' AS "lcstatus",
+	-- "q1w_rl"."in_construction"::BOOLEAN AS "inconstrct",
+	("q1w_rl"."all_tags"->>'name')::VARCHAR(100) AS "name",
+	("q1w_rl"."all_tags"->>'ref')::VARCHAR(20) AS "ref",
+	("q1w_rl"."all_tags"->>'int_ref')::VARCHAR(20) AS "int_ref",
+	("q1w_rl"."all_tags"->>'railway:track_ref')::VARCHAR(20) AS "track_ref",
+	(CASE
+		WHEN ("q1w_rl"."all_tags"->>'electrified' IN ('1', 'contact_line', 'rail', 'true', 'yes')) THEN true
+		WHEN ("q1w_rl"."all_tags"->>'electrified' IN ('0', 'false', 'no')) THEN false
+		ELSE NULL
+	END)::BOOLEAN AS "electr",
+	"q1w_rl"."all_tags"->>'electrified'::VARCHAR(16) AS "electr_v",
+	(CASE
+		WHEN ("q1w_rl"."all_tags"->>'gauge' ~ '^[0-9]{1,5}$') THEN "q1w_rl"."all_tags"->>'gauge'
+		ELSE NULL
+	END)::SMALLINT AS "gauge",
+	(CASE
+		WHEN ("q1w_rl"."all_tags"->>'maxspeed' ~ '^[0-9]{1,5}$') THEN "q1w_rl"."all_tags"->>'maxspeed'
+		ELSE NULL
+	END)::SMALLINT AS "maxspeed",
+	(CASE
+		WHEN ("q1w_rl"."all_tags"->>'layer' ~ '^[0]+|(-?[1-9]{1,5})$') THEN "q1w_rl"."all_tags"->>'layer'
+		ELSE '0'
+	END)::SMALLINT AS "layer",
+	("q1w_rl"."all_tags"->>'layer')::VARCHAR AS "layer_v",
+	(CASE
+		WHEN (("q1w_rl"."all_tags"->>'bridge' IS NOT NULL) AND ("q1w_rl"."all_tags"->>'bridge' ~ '.+')) THEN 1
+		ELSE 0
+	END)::SMALLINT AS "bridge",
+	(CASE
+		WHEN (("q1w_rl"."all_tags"->>'bridge' IS NOT NULL) AND ("q1w_rl"."all_tags"->>'bridge' ~ '.+')) THEN LOWER("q1w_rl"."all_tags"->>'bridge')
+		ELSE NULL
+	END)::VARCHAR(32) AS "bridge_v",
+	(CASE
+		WHEN (("q1w_rl"."all_tags"->>'tunnel' IS NOT NULL) AND ("q1w_rl"."all_tags"->>'tunnel' ~ '.+')) THEN 1
+		ELSE 0
+	END)::SMALLINT AS "tunnel",
+	(CASE
+		WHEN (("q1w_rl"."all_tags"->>'tunnel' IS NOT NULL) AND ("q1w_rl"."all_tags"->>'tunnel' ~ '.+')) THEN LOWER("q1w_rl"."all_tags"->>'tunnel')
+		ELSE NULL
+	END)::VARCHAR(32) AS "tunnel_v",
+	'W'::CHAR(1) AS "osmgeomsrc",
+	"q1w_rl"."geom"
+ FROM "q1w_rl"
+ WHERE (
+	"q1w_rl"."_way_data_key" IS NOT NULL
+ )
+)
+SELECT
+	"q_rl"."ogc_fid",
+	"q_rl"."osm_id",
+	"q_rl"."lcstatus",
+	-- "q_rl"."inconstrct",
+	"q_rl"."name",
+	"q_rl"."ref",
+	"q_rl"."int_ref",
+	"q_rl"."track_ref",
+	"q_rl"."electr",
+	"q_rl"."electr_v",
+	"q_rl"."gauge",
+	"q_rl"."maxspeed",
+	"q_rl"."layer",
+	"q_rl"."layer_v",
+	"q_rl"."bridge",
+	"q_rl"."bridge_v",
+	"q_rl"."tunnel",
+	"q_rl"."tunnel_v",
+	("q_rl"."codes"->>'qxcode')::INTEGER AS "qxcode",
+	("q_rl"."codes"->>'gfcode')::SMALLINT AS "code",
+	(CASE
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506101) THEN 'rail'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506102) THEN 'light_rail'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506103) THEN 'subway'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506104) THEN 'tram'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506105) THEN 'monorail'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506106) THEN 'narrow_gauge'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506107) THEN 'miniature'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506108) THEN 'funicular'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506109) THEN 'rack'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506111) THEN 'drag_lift'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506112) THEN 'chair_lift'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506113) THEN 'cable_car'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506114) THEN 'gondola'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506115) THEN 'goods'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506119) THEN 'other_lift'
+		WHEN (("q_rl"."codes"->>'qxcode')::INTEGER = 506199) THEN 'other_rail'
+		ELSE NULL
+	END)::VARCHAR(40) AS "fclass",
+	'railways'::VARCHAR(16) AS "fxcateg",
+	"q_rl"."lastchange",
+	"q_rl"."osmgeomsrc",
+	"q_rl"."geom"
+ FROM "q2w_rl" AS "q_rl"
+ WHERE (
+		(("q_rl"."codes"->>'qxcode')::INTEGER > 506100) AND (("q_rl"."codes"->>'qxcode')::INTEGER <= 506199)
+);
+
+CREATE UNIQUE INDEX "qoxm_railways_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("ogc_fid" ASC);
+CREATE UNIQUE INDEX "qoxm_railways_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("osm_id" ASC);
+CREATE INDEX "qoxm_railways_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("lastchange" ASC);
+CREATE INDEX "qoxm_railways_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("code" ASC);
+CREATE INDEX "qoxm_railways_qxcode_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("qxcode" ASC);
+CREATE INDEX "qoxm_railways_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("fclass" ASC);
+CREATE INDEX "qoxm_railways_lcstatus_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("lcstatus" ASC);
+CREATE INDEX "qoxm_railways_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "gist" ("geom");
 
 COMMIT;
 
