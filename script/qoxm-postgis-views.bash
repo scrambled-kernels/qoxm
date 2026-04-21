@@ -279,7 +279,7 @@ WITH
 		ELSE 'other'
 	END)::VARCHAR(10) AS "pubaccess",
 	'W'::CHAR(1) AS "osmgeomsrc",
-	"q1w_ro"."geom"
+	ST_MakeValid("q1w_ro"."geom", 'method=structure keepcollapsed=false')::GEOMETRY("MultiLineString", ${GEOM_STORE_SRS}) AS "geom"
  FROM "q1w_ro"
  WHERE (
 	"q1w_ro"."highway_type" IS NOT NULL
@@ -325,6 +325,7 @@ SELECT
  FROM "q2w_ro" AS "q_ro"
  WHERE (
 		("q_ro"."code" > 5100) AND ("q_ro"."code" <= 5199)
+		AND ("q_ro"."geom" IS NOT NULL)
 );
 
 CREATE UNIQUE INDEX "qoxm_roads_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("ogc_fid" ASC);
@@ -378,7 +379,7 @@ WITH "qw_la" AS (SELECT
 		ELSE NULL
 	END)::SMALLINT AS "code",
 	'R'::CHAR(1) AS "osmgeomsrc",
-	"tw1_mp"."geom"
+	ST_MakeValid("tw1_mp"."geom", 'method=structure keepcollapsed=false')::GEOMETRY("MultiPolygon", ${GEOM_STORE_SRS}) AS "geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
  WHERE (
 	("tw1_mp"."all_tags"->>'landuse' IS NOT NULL)
@@ -424,7 +425,8 @@ SELECT
 	NULL AS "aal"
  FROM "qw_la" AS "q_la"
  WHERE (
-		"q_la"."code" IS NOT NULL
+		("q_la"."code" IS NOT NULL)
+		AND ("q_la"."geom" IS NOT NULL)
 );
 
 CREATE UNIQUE INDEX "qoxm_landuse_a_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("ogc_fid" ASC);
@@ -460,7 +462,7 @@ WITH "qw_wa" AS (SELECT
 	"tw1_mp"."all_tags"->>'alt_name'::VARCHAR(100) AS "alt_name",
 	"tw1_mp"."all_tags"->>'water'::VARCHAR(20) AS "water",
 	'R'::CHAR(1) AS "osmgeomsrc",
-	"tw1_mp"."geom"
+	ST_MakeValid("tw1_mp"."geom", 'method=structure keepcollapsed=false')::GEOMETRY("MultiPolygon", ${GEOM_STORE_SRS}) AS "geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
  WHERE (
 	 ("tw1_mp"."all_tags"->>'natural' IN ('glacier', 'water', 'wetland'))
@@ -551,7 +553,7 @@ SELECT
 	"t_bu"."all_tags"->>'name'::VARCHAR(100) AS "name",
 	NULL AS "aal",
 	'W'::CHAR(1) AS "osmgeomsrc",
-	"t_bu"."geom"
+	ST_MakeValid("t_bu"."geom", 'method=structure keepcollapsed=false')::GEOMETRY("MultiPolygon", ${GEOM_STORE_SRS}) AS "geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "t_bu"
  WHERE (
 	("t_bu"."all_tags"->>'building' IS NOT NULL)
@@ -584,7 +586,7 @@ WITH "qw_mx" AS (SELECT
 	"tw1_mp"."osm_timestamp"::TIMESTAMP AS "lastchange",
 	"tw1_mp"."all_tags",
 	'W'::CHAR(1) AS "osmgeomsrc",
-	ST_Centroid("tw1_mp"."geom", true)::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS}) AS "geom"
+	ST_Centroid("tw1_mp"."geom")::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS}) AS "geom"
  FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
  WHERE (
 	COALESCE("tw1_mp"."all_tags"->>'amenity', "tw1_mp"."all_tags"->>'emergency', "tw1_mp"."all_tags"->>'highway', "tw1_mp"."all_tags"->>'historic', "tw1_mp"."all_tags"->>'landuse', "tw1_mp"."all_tags"->>'leisure', "tw1_mp"."all_tags"->>'man_made', "tw1_mp"."all_tags"->>'office', "tw1_mp"."all_tags"->>'shop', "tw1_mp"."all_tags"->>'sport', "tw1_mp"."all_tags"->>'vending') IS NOT NULL
@@ -1064,7 +1066,7 @@ WITH
 		ELSE NULL
 	END)::VARCHAR(32) AS "tunnel_v",
 	'W'::CHAR(1) AS "osmgeomsrc",
-	"q1w_rl"."geom"
+	ST_MakeValid("q1w_rl"."geom", 'method=structure keepcollapsed=false')::GEOMETRY("MultiLineString", ${GEOM_STORE_SRS}) AS "geom"
  FROM "q1w_rl"
  WHERE (
 	"q1w_rl"."_way_data_key" IS NOT NULL
@@ -1117,6 +1119,7 @@ SELECT
  FROM "q2w_rl" AS "q_rl"
  WHERE (
 		(("q_rl"."codes"->>'qxcode')::INTEGER > 506100) AND (("q_rl"."codes"->>'qxcode')::INTEGER <= 506199)
+		AND ("q_rl"."geom" IS NOT NULL)
 );
 
 CREATE UNIQUE INDEX "qoxm_railways_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("ogc_fid" ASC);
