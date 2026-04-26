@@ -59,6 +59,10 @@ DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" CASCAD
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_fuel" CASCADE;
+
+-- DROP FUNCTION IF EXISTS "${OSM_DATA_TABLES_SCHEMA}"."qoxm_infer_pubaccess" (JSONB);
 
 ALTER TABLE "${OSM_DATA_TABLES_SCHEMA}"."lines" ALTER COLUMN "all_tags" TYPE "jsonb" USING ("all_tags"::JSONB);
 ALTER TABLE "${OSM_DATA_TABLES_SCHEMA}"."multilinestrings" ALTER COLUMN "all_tags" TYPE "jsonb" USING ("all_tags"::JSONB);
@@ -116,7 +120,6 @@ WITH "qw_pl" AS (SELECT
  ORDER BY "tw1_po"."osm_id"::BIGINT ASC
 )
 SELECT
-	"q_pl".*,
 	ROW_NUMBER() OVER (ORDER BY "q_pl"."osm_id" ASC) AS "ogc_fid",
 	(CASE
 		WHEN ("q_pl"."code" = 1001) THEN 'city'
@@ -134,7 +137,8 @@ SELECT
 		ELSE NULL
 	END)::VARCHAR(40) AS "fclass",
 	'place'::VARCHAR(16) AS "fxcateg",
-	true AS "aal"
+	true AS "aal",
+	"q_pl".*
  FROM "qw_pl" AS "q_pl"
  WHERE (
 	("q_pl"."code" IS NOT NULL)
@@ -143,7 +147,8 @@ SELECT
 
 CREATE UNIQUE INDEX "qoxm_places_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" USING "btree" ("ogc_fid" ASC);
 CREATE UNIQUE INDEX "qoxm_places_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" USING "btree" ("osm_id" ASC);
-CREATE INDEX "qoxm_places_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" USING "btree" ("lastchange");
+-- CREATE INDEX "qoxm_places_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" USING "btree" ("lastchange");
+CREATE INDEX "qoxm_places_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" USING "btree" ("code");
 CREATE INDEX "qoxm_places_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" USING "btree" ("fclass");
 CREATE INDEX "qoxm_places_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_places" USING "gist" ("geom");
 
@@ -207,10 +212,10 @@ WITH
 		ELSE NULL
 	END)::SMALLINT AS "lanes",
 	("q1w_ro"."all_tags"->>'name')::VARCHAR(100) AS "name",
-	("q1w_ro"."all_tags"->>'oneway')::VARCHAR(1) AS "oneway",
-	("q1w_ro"."all_tags"->>'toll') AS "toll",
-	("q1w_ro"."all_tags"->>'toll:bus') AS "toll_bus",
-	("q1w_ro"."all_tags"->>'toll:hgv') AS "toll_hgv",
+	LOWER("q1w_ro"."all_tags"->>'oneway')::VARCHAR(1) AS "oneway",
+	LOWER("q1w_ro"."all_tags"->>'toll') AS "toll",
+	LOWER("q1w_ro"."all_tags"->>'toll:bus') AS "toll_bus",
+	LOWER("q1w_ro"."all_tags"->>'toll:hgv') AS "toll_hgv",
 	SUBSTRING("q1w_ro"."all_tags"->>'charge' FROM '^([0-9]+([.][0-9]{1,3}))([ ].+)?$')::DECIMAL(15, 3) AS "charge_v",
 	SUBSTRING("q1w_ro"."all_tags"->>'charge' FROM '^[0-9.]+[ ]+([A-Z]{3})(/.*)?$')::CHAR(3) AS "charge_c",
 	(CASE
@@ -242,23 +247,24 @@ WITH
 		WHEN (("q1w_ro"."all_tags"->>'tunnel' IS NOT NULL) AND ("q1w_ro"."all_tags"->>'tunnel' ~ '.+')) THEN LOWER("q1w_ro"."all_tags"->>'tunnel')
 		ELSE NULL
 	END)::VARCHAR(32) AS "tunnel_v",
-	("q1w_ro"."all_tags"->>'surface')::VARCHAR(20) AS "surface",
-	("q1w_ro"."all_tags"->>'smoothness')::VARCHAR(32) AS "smoothness",
+	LOWER("q1w_ro"."all_tags"->>'surface')::VARCHAR(20) AS "surface",
+	LOWER("q1w_ro"."all_tags"->>'smoothness')::VARCHAR(32) AS "smoothness",
 	(CASE
 		WHEN ("q1w_ro"."all_tags"->>'incline' ~ '^-?[0-9]+$') THEN "q1w_ro"."all_tags"->>'incline'
 		ELSE NULL
 	END)::SMALLINT AS "incline",
-	"q1w_ro"."all_tags"->>'lit' AS "lit",
+	LOWER("q1w_ro"."all_tags"->>'lit') AS "lit",
 	(CASE
 		WHEN ("q1w_ro"."all_tags"->>'width' ~ '^[0-9]+$') THEN "q1w_ro"."all_tags"->>'width'
 		ELSE NULL
 	END)::SMALLINT AS "width",
-	("q1w_ro"."all_tags"->>'access')::VARCHAR(16) AS "access",
-	("q1w_ro"."all_tags"->>'horse')::VARCHAR(16) AS "horse",
-	("q1w_ro"."all_tags"->>'motor_vehicle')::VARCHAR(16) AS "motor_veh",
-	("q1w_ro"."all_tags"->>'motorcar')::VARCHAR(16) AS "motorcar",
-	("q1w_ro"."all_tags"->>'motorcycle')::VARCHAR(16) AS "motorcycle",
-	("q1w_ro"."all_tags"->>'vehicle') AS "vehicle",
+	LOWER("q1w_ro"."all_tags"->>'access')::VARCHAR(16) AS "access",
+	LOWER("q1w_ro"."all_tags"->>'foot')::VARCHAR(16) AS "foot",
+	LOWER("q1w_ro"."all_tags"->>'horse')::VARCHAR(16) AS "horse",
+	LOWER("q1w_ro"."all_tags"->>'motor_vehicle')::VARCHAR(16) AS "motor_veh",
+	LOWER("q1w_ro"."all_tags"->>'motorcar')::VARCHAR(16) AS "motorcar",
+	LOWER("q1w_ro"."all_tags"->>'motorcycle')::VARCHAR(16) AS "motorcycle",
+	LOWER("q1w_ro"."all_tags"->>'vehicle')::VARCHAR(16) AS "vehicle",
 	(CASE
 		WHEN ("q1w_ro"."all_tags"->>'motor_vehicle' = 'designated') THEN 'motor'
 		WHEN ("q1w_ro"."all_tags"->>'motor_vehicle' = 'yes') THEN 'motor'
@@ -286,7 +292,6 @@ WITH
  )
 )
 SELECT
-	"q_ro".*,
 	ROW_NUMBER() OVER (ORDER BY "q_ro"."osm_id" ASC) AS "ogc_fid",
 	(CASE
 		WHEN ("q_ro"."code" = 5111) THEN 'motorway'
@@ -321,7 +326,8 @@ SELECT
 		ELSE NULL
 	END)::VARCHAR(40) AS "fclass",
 	'roads'::VARCHAR(16) AS "fxcateg",
-	NULL AS "aal"
+	NULL AS "aal",
+	"q_ro".*
  FROM "q2w_ro" AS "q_ro"
  WHERE (
 		("q_ro"."code" > 5100) AND ("q_ro"."code" <= 5199)
@@ -330,12 +336,12 @@ SELECT
 
 CREATE UNIQUE INDEX "qoxm_roads_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("ogc_fid" ASC);
 CREATE UNIQUE INDEX "qoxm_roads_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("osm_id" ASC);
-CREATE INDEX "qoxm_roads_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("lastchange" ASC);
+-- CREATE INDEX "qoxm_roads_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("lastchange" ASC);
 CREATE INDEX "qoxm_roads_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("code" ASC);
 CREATE INDEX "qoxm_roads_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("fclass" ASC);
 CREATE INDEX "qoxm_roads_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("name" ASC);
 CREATE INDEX "qoxm_roads_pubaccess_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("pubaccess" ASC);
-CREATE INDEX "qoxm_roads_ref_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("ref" ASC);
+-- CREATE INDEX "qoxm_roads_ref_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "btree" ("ref" ASC);
 CREATE INDEX "qoxm_roads_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_roads" USING "gist" ("geom");
 
 CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" AS
@@ -343,6 +349,7 @@ WITH "qw_la" AS (SELECT
 	"tw1_mp"."osm_id"::BIGINT,
 	"tw1_mp"."osm_way_id"::BIGINT,
 	"tw1_mp"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	("tw1_mp"."all_tags"->>'name')::VARCHAR(100) AS "name",
 	(CASE
 		WHEN (("tw1_mp"."all_tags"->>'landuse' = 'forest') OR ("tw1_mp"."all_tags"->>'natural' = 'wood')) THEN 7201
 		WHEN (("tw1_mp"."all_tags"->>'landuse' = 'park') OR ("tw1_mp"."all_tags"->>'leisure' = 'park') OR ("tw1_mp"."all_tags"->>'leisure' = 'common')) THEN 7202
@@ -388,7 +395,6 @@ WITH "qw_la" AS (SELECT
  )
 )
 SELECT
-	"q_la".*,
 	ROW_NUMBER() OVER (ORDER BY "q_la"."osm_way_id" ASC NULLS LAST) AS "ogc_fid",
 	(CASE
 		WHEN ("q_la"."code" = 7201) THEN 'forest'
@@ -422,7 +428,8 @@ SELECT
 		ELSE NULL
 	END)::VARCHAR(40) AS "fclass",
 	'landuse'::VARCHAR(16) AS "fxcateg",
-	NULL AS "aal"
+	NULL AS "aal",
+	"q_la".*
  FROM "qw_la" AS "q_la"
  WHERE (
 		("q_la"."code" IS NOT NULL)
@@ -434,6 +441,7 @@ CREATE UNIQUE INDEX "qoxm_landuse_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}".
 CREATE UNIQUE INDEX "qoxm_landuse_a_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("osm_way_id" ASC);
 CREATE INDEX "qoxm_landuse_a_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("code" ASC);
 CREATE INDEX "qoxm_landuse_a_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("fclass" ASC);
+CREATE INDEX "qoxm_landuse_a_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "btree" ("name" ASC);
 CREATE INDEX "qoxm_landuse_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_landuse_a" USING "gist" ("geom");
 
 CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" AS
@@ -473,7 +481,6 @@ WITH "qw_wa" AS (SELECT
 	"tw1_mp"."osm_id"::BIGINT ASC
 )
 SELECT
-	"q_wa".*,
 	ROW_NUMBER() OVER (ORDER BY "q_wa"."osm_way_id" ASC) AS "ogc_fid",
 	(CASE
 		WHEN ("q_wa"."code" = 8200) THEN 'water'
@@ -485,7 +492,8 @@ SELECT
 		ELSE NULL
 	END)::VARCHAR(40) AS "fclass",
 	'water'::VARCHAR(16) AS "fxcateg",
-	NULL AS "aal"
+	NULL AS "aal",
+	"q_wa".*
  FROM "qw_wa" AS "q_wa"
  WHERE (
 	 "q_wa"."code" IS NOT NULL
@@ -494,10 +502,13 @@ SELECT
 CREATE UNIQUE INDEX "qoxm_water_a_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("ogc_fid" ASC);
 CREATE UNIQUE INDEX "qoxm_water_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("osm_id" ASC);
 CREATE UNIQUE INDEX "qoxm_water_a_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("osm_way_id" ASC);
-CREATE INDEX "qoxm_water_a_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("lastchange" ASC);
+-- CREATE INDEX "qoxm_water_a_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("lastchange" ASC);
 CREATE INDEX "qoxm_water_a_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("code" ASC);
 CREATE INDEX "qoxm_water_a_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("fclass" ASC);
 CREATE INDEX "qoxm_water_a_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("name" ASC);
+CREATE INDEX "qoxm_water_a_alt_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("alt_name" ASC);
+CREATE INDEX "qoxm_water_a_int_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("int_name" ASC);
+CREATE INDEX "qoxm_water_a_loc_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "btree" ("loc_name" ASC);
 CREATE INDEX "qoxm_water_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_water_a" USING "gist" ("geom");
 
 CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" AS
@@ -550,7 +561,7 @@ SELECT
 		WHEN (("t_bu"."all_tags"->>'height' ~ '^[0-9]{1,5}(\.[0-9]{1,3})?[[:blank:]]*(ft|(ft\.)|feet|foots)[[:blank:]]*$')) THEN ROUND(("t_bu"."all_tags"->>'height')::NUMERIC(5, 0) * 0.3048, 0)
 		ELSE NULL
 	END)::SMALLINT AS "height",
-	"t_bu"."all_tags"->>'name'::VARCHAR(100) AS "name",
+	("t_bu"."all_tags"->>'name')::VARCHAR(100) AS "name",
 	NULL AS "aal",
 	'W'::CHAR(1) AS "osmgeomsrc",
 	ST_MakeValid("t_bu"."geom", 'method=structure keepcollapsed=false')::GEOMETRY("MultiPolygon", ${GEOM_STORE_SRS}) AS "geom"
@@ -564,7 +575,7 @@ CREATE UNIQUE INDEX "qoxm_buildings_a_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."q
 CREATE UNIQUE INDEX "qoxm_buildings_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "btree" ("osm_id" ASC);
 CREATE UNIQUE INDEX "qoxm_buildings_a_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "btree" ("osm_way_id" ASC);
 CREATE INDEX "qoxm_buildings_a_type_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "btree" ("type" ASC);
-CREATE INDEX "qoxm_buildings_a_use_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "btree" ("use" ASC);
+-- CREATE INDEX "qoxm_buildings_a_use_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "btree" ("use" ASC);
 CREATE INDEX "qoxm_buildings_a_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "gist" ("geom");
 
 CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" AS
@@ -622,6 +633,7 @@ WITH "qw_mx" AS (SELECT
 		ELSE NULL
 	END)::VARCHAR(32) AS "tunnel_v",
 	LOWER("tw2_px"."all_tags"->>'access')::VARCHAR(16) AS "access",
+	("tw2_px"."all_tags"->>'opening_hours')::VARCHAR(128) AS "openhrs",
 	(CASE
 		WHEN ("tw2_px"."all_tags"->>'amenity' = 'police') THEN '{"qxcode": 502001, "gfcode": 2001, "carto_icon": "5/59/Police-16.svg"}'
 		WHEN ("tw2_px"."all_tags"->>'amenity' = 'fire_station') THEN '{"qxcode": 502002, "gfcode": 2002, "carto_icon": "b/b7/Fire-station-16.svg"}'
@@ -784,7 +796,6 @@ SELECT
 	"q_px"."osm_way_id",
 	"q_px"."lastchange",
 	"q_px"."osmgeomsrc",
-	"q_px"."geom",
 	"q_px"."name",
 	"q_px"."ref",
 	"q_px"."notes",
@@ -795,6 +806,7 @@ SELECT
 	"q_px"."tunnel",
 	"q_px"."tunnel_v",
 	"q_px"."access",
+	"q_px"."openhrs",
 	("q_px"."codes"->>'qxcode')::INTEGER AS "qxcode",
 	("q_px"."codes"->>'gfcode')::SMALLINT AS "code",
 	("q_px"."codes"->>'carto_icon')::VARCHAR(64) AS "icon",
@@ -961,7 +973,8 @@ SELECT
 		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502701 AND 502799) THEN 'tourism'
 		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502901 AND 502999) THEN 'miscpoi'
 		ELSE NULL
-	END)::VARCHAR(16) AS "fxcateg"
+	END)::VARCHAR(16) AS "fxcateg",
+	"q_px"."geom"
  FROM "qw_pi" AS "q_px"
  WHERE (
 	"q_px"."codes"->>'qxcode' IS NOT NULL
@@ -972,10 +985,11 @@ SELECT
 CREATE UNIQUE INDEX "qoxm_pois_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("ogc_fid" ASC);
 CREATE UNIQUE INDEX "qoxm_pois_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("osm_id" ASC);
 CREATE UNIQUE INDEX "qoxm_pois_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("osm_way_id" ASC);
-CREATE INDEX "qoxm_pois_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("lastchange" ASC);
+-- CREATE INDEX "qoxm_pois_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("lastchange" ASC);
 CREATE INDEX "qoxm_pois_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("code" ASC);
 CREATE INDEX "qoxm_pois_qxcode_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("qxcode" ASC);
 CREATE INDEX "qoxm_pois_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("fclass" ASC);
+CREATE INDEX "qoxm_pois_name_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "btree" ("name" ASC);
 CREATE INDEX "qoxm_pois_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_pois" USING "gist" ("geom");
 
 CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" AS
@@ -1124,12 +1138,329 @@ SELECT
 
 CREATE UNIQUE INDEX "qoxm_railways_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("ogc_fid" ASC);
 CREATE UNIQUE INDEX "qoxm_railways_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("osm_id" ASC);
-CREATE INDEX "qoxm_railways_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("lastchange" ASC);
+-- CREATE INDEX "qoxm_railways_lastchange_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("lastchange" ASC);
 CREATE INDEX "qoxm_railways_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("code" ASC);
 CREATE INDEX "qoxm_railways_qxcode_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("qxcode" ASC);
 CREATE INDEX "qoxm_railways_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("fclass" ASC);
 CREATE INDEX "qoxm_railways_lcstatus_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "btree" ("lcstatus" ASC);
 CREATE INDEX "qoxm_railways_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_railways" USING "gist" ("geom");
+
+CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" AS
+WITH "qw_mx" AS (SELECT
+	"tw1_po"."osm_id"::BIGINT,
+	NULL::BIGINT AS "osm_way_id",
+	"tw1_po"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	"tw1_po"."all_tags",
+	'N'::CHAR(1) AS "osmgeomsrc",
+	"tw1_po"."geom"::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS})
+ FROM "${OSM_DATA_TABLES_SCHEMA}"."points" AS "tw1_po"
+ WHERE (
+	COALESCE("tw1_po"."all_tags"->>'amenity', "tw1_po"."all_tags"->>'barrier', "tw1_po"."all_tags"->>'highway') IS NOT NULL
+ )
+ UNION ALL
+ SELECT
+	NULL::BIGINT AS "osm_id",
+	"tw1_mp"."osm_way_id"::BIGINT,
+	"tw1_mp"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	"tw1_mp"."all_tags",
+	'W'::CHAR(1) AS "osmgeomsrc",
+	ST_Centroid("tw1_mp"."geom")::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS}) AS "geom"
+ FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
+ WHERE (
+	COALESCE("tw1_mp"."all_tags"->>'amenity', "tw1_mp"."all_tags"->>'barrier', "tw1_mp"."all_tags"->>'highway') IS NOT NULL
+ )
+),
+"qw_ti" AS (SELECT
+	ROW_NUMBER() OVER (ORDER BY "tw2_tx"."osm_id" ASC NULLS LAST, "tw2_tx"."osm_way_id" ASC NULLS LAST) AS "ogc_fid",
+	"tw2_tx"."osm_id",
+	"tw2_tx"."osm_way_id",
+	"tw2_tx"."lastchange",
+	"tw2_tx"."all_tags",
+	LOWER("tw2_tx"."all_tags"->>'direction')::VARCHAR(32) AS "directn_v",
+	("tw2_tx"."all_tags"->>'name')::VARCHAR(100) AS "name",
+	("tw2_tx"."all_tags"->>'name')::VARCHAR(32) AS "ref",
+	("tw2_tx"."all_tags"->>'notes')::VARCHAR(256) AS "notes",
+	("tw2_tx"."all_tags"->>'operator')::VARCHAR(256) AS "operator",
+	("tw2_tx"."all_tags"->>'covered')::VARCHAR(256) AS "covered",
+	("tw2_tx"."all_tags"->>'maxstay')::VARCHAR(64) AS "maxstay",
+	("tw2_tx"."all_tags"->>'surveillance')::VARCHAR(16) AS "surveil",
+	(CASE
+		WHEN ("tw2_tx"."all_tags"->>'fee:conditional' IS NOT NULL) THEN NULL
+		WHEN ("tw2_tx"."all_tags"->>'fee' IN ('0', 'false', 'no', 'donation')) THEN false
+		WHEN ("tw2_tx"."all_tags"->>'fee' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fee",
+	("tw2_tx"."all_tags"->>'charge')::VARCHAR(16) AS "charge",
+	(CASE
+		WHEN ("tw2_tx"."all_tags"->>'layer' ~ '^[0-9]+$') THEN "tw2_tx"."all_tags"->>'layer'
+		ELSE '0'
+	END)::SMALLINT AS "layer",
+	("tw2_tx"."all_tags"->>'layer')::VARCHAR AS "layer_v",
+	(CASE
+		WHEN ("tw2_tx"."all_tags"->>'maxspeed' ~ '^[0-9]+$') THEN "tw2_tx"."all_tags"->>'maxspeed'
+		ELSE NULL
+	END)::SMALLINT AS "maxspeed",
+	(CASE
+		WHEN (LOWER("tw2_tx"."all_tags"->>'lockable') IN ('1', 'true', 'yes')) THEN true
+		WHEN (LOWER("tw2_tx"."all_tags"->>'lockable') IN ('0', 'false', 'no')) THEN false
+		ELSE NULL
+	END)::BOOLEAN AS "lockable",
+	(CASE
+		WHEN (LOWER("tw2_tx"."all_tags"->>'locked') IN ('1', 'true', 'yes')) THEN true
+		WHEN (LOWER("tw2_tx"."all_tags"->>'locked') IN ('0', 'false', 'no')) THEN false
+		ELSE NULL
+	END)::BOOLEAN AS "locked",
+	LOWER("tw2_tx"."all_tags"->>'surface')::VARCHAR(16) AS "surface",
+	LOWER("tw2_tx"."all_tags"->>'access')::VARCHAR(16) AS "access",
+	LOWER("tw2_tx"."all_tags"->>'foot')::VARCHAR(16) AS "foot",
+	LOWER("tw2_tx"."all_tags"->>'horse')::VARCHAR(16) AS "horse",
+	LOWER("tw2_tx"."all_tags"->>'motor_vehicle')::VARCHAR(16) AS "motor_veh",
+	LOWER("tw2_tx"."all_tags"->>'motorcar')::VARCHAR(16) AS "motorcar",
+	LOWER("tw2_tx"."all_tags"->>'motorcycle')::VARCHAR(16) AS "motorcycle",
+	LOWER("tw2_tx"."all_tags"->>'vehicle')::VARCHAR(16) AS "vehicle",
+	(CASE
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'traffic_signals') THEN '{"fclass": "traffic_signals", "qxcode": 505201, "gfcode": 5201, "direction_attr": "traffic_signals:direction", "directions": ["forward", "backward"], "carto_icon": "8/84/Traffic_light-16.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'mini_roundabout') THEN '{"fclass": "mini_roundabout", "qxcode": 505202, "gfcode": 5202, "direction_attr": "direction", "directions": ["anticlockwise", "clockwise"], "direction_default": 'clockwise', "carto_icon": "9/9b/Highway_mini_roundabout.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'stop') THEN '{"fclass": "stop", "qxcode": 505203, "gfcode": 5203, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'crossing') THEN '{"fclass": "crossing", "qxcode": 505204, "gfcode": 5204, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'railway' = 'level_crossing') THEN '{"fclass": "rail_level_crossing", "qxcode": 605204, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": "f/f7/Level_crossing.svg"}'
+		WHEN (("tw2_tx"."all_tags"->>'highway' = 'ford') OR ("tw2_tx"."all_tags"->>'ford' IN ('1', 'true', 'yes'))) THEN '{"fclass": "ford", "qxcode": 505205, "gfcode": 5205, "direction_attr": null, "directions": [], "carto_icon": "5/50/Ford.16.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'motorway_junction') THEN '{"fclass": "motorway_junction", "qxcode": 505206, "gfcode": 5206, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'turning_circle') THEN '{"fclass": "turning_circle", "qxcode": 505207, "gfcode": 5207, "direction_attr": null, "directions": [], "carto_icon": "misc/Turning_circle_mod1-16.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'speed_camera') THEN '{"fclass": "speed_camera", "qxcode": 505208, "gfcode": 5208, "direction_attr": "direction", "directions": null, "carto_icon": "misc/Fixed_speed_camera.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'street_lamp') THEN '{"fclass": "street_lamp", "qxcode": 505209, "gfcode": 5209, "direction_attr": null, "directions": [], "carto_icon": "a/a4/Highway_street_lamp.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'gate') THEN '{"fclass": "barrier_gate", "qxcode": 505211, "gfcode": 5211, "direction_attr": null, "directions": [], "carto_icon": "9/97/Barrier_gate.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'bollard') THEN '{"fclass": "barrier_bollard", "qxcode": 505212, "gfcode": 5212, "direction_attr": null, "directions": [], "carto_icon": "8/8f/Barrier.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'lift_gate') THEN '{"fclass": "barrier_lift_gate", "qxcode": 505213, "gfcode": 5213, "direction_attr": null, "directions": [], "carto_icon": "misc/Traffic_lift_gate.svg"}'
+		WHEN (("tw2_tx"."all_tags"->>'barrier' = 'stile') OR ("tw2_tx"."all_tags"->>'highway' = 'stile')) THEN '{"fclass": "barrier_stile", "qxcode": 505214, "gfcode": 5214, "direction_attr": null, "directions": [], "carto_icon": "7/7c/Barrier_stile-14.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'cycle_barrier') THEN '{"fclass": "barrier_cycle", "qxcode": 505215, "gfcode": 5215, "direction_attr": null, "directions": [], "carto_icon": "0/09/Cycle_barrier-14.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'toll_booth') THEN '{"fclass": "barrier_toll", "qxcode": 505217, "gfcode": 5217, "direction_attr": null, "directions": [], "carto_icon": "d/d7/Toll_booth.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'block') THEN '{"fclass": "barrier_block", "qxcode": 505218, "gfcode": 5218, "direction_attr": null, "directions": [], "carto_icon": "8/8f/Barrier.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'kissing_gate') THEN '{"fclass": "barrier_kissing_gate", "qxcode": 505219, "gfcode": 5219, "direction_attr": null, "directions": [], "carto_icon": "2/2f/Kissing_gate-14.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'cattle_grid') THEN '{"fclass": "barrier_cattle_grid", "qxcode": 505220, "gfcode": 5220, "direction_attr": null, "directions": [], "carto_icon": "4/4c/Barrier_cattle_grid-14.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' = 'swing_gate') THEN '{"fclass": "barrier_swing_gate", "qxcode": 605214, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": "misc/Traffic_swing_gate.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'barrier' IS NOT NULL) THEN '{"fclass": "barrier", "qxcode": 505210, "gfcode": 5210, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'services') THEN '{"fclass": "service", "qxcode": 505251, "gfcode": 5251, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'rest_area') THEN '{"fclass": "highway_rest_area", "qxcode": 605251, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN (("tw2_tx"."all_tags"->>'amenity' = 'parking') AND ("tw2_tx"."all_tags"->>'parking' = 'site')) THEN '{"fclass": "parking_site", "qxcode": 505261, "gfcode": 5261, "direction_attr": null, "directions": [], "carto_icon": "7/7b/Parking-16.svg"}'
+		WHEN (("tw2_tx"."all_tags"->>'amenity' = 'parking') AND ("tw2_tx"."all_tags"->>'parking' = 'multi-storey')) THEN '{"fclass": "parking_multistorey", "qxcode": 505262, "gfcode": 5262, "direction_attr": null, "directions": [], "carto_icon": "7/7b/Parking-16.svg"}'
+		WHEN (("tw2_tx"."all_tags"->>'amenity' = 'parking') AND ("tw2_tx"."all_tags"->>'parking' = 'underground')) THEN '{"fclass": "parking_underground", "qxcode": 505263, "gfcode": 5263, "direction_attr": null, "directions": [], "carto_icon": "7/7b/Parking-16.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'amenity' = 'parking') THEN '{"fclass": "parking", "qxcode": 505260, "gfcode": 5260, "direction_attr": null, "directions": [], "carto_icon": "7/7b/Parking-16.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'amenity' = 'bicycle_parking') THEN '{"fclass": "parking_bicycle", "qxcode": 505270, "gfcode": 5270, "direction_attr": null, "directions": [], "carto_icon": "7/7f/Parking-bicycle-16.svg"}'
+		ELSE NULL
+	END)::JSONB AS "codes",
+	"tw2_tx"."osmgeomsrc",
+	"tw2_tx"."geom"
+ FROM "qw_mx" AS "tw2_tx"
+)
+SELECT
+	"q_tx"."ogc_fid",
+	"q_tx"."osm_id",
+	"q_tx"."osm_way_id",
+	"q_tx"."lastchange",
+	"q_tx"."osmgeomsrc",
+	"q_tx"."name",
+	"q_tx"."ref",
+	"q_tx"."notes",
+	"q_tx"."operator",
+	"q_tx"."covered",
+	"q_tx"."maxstay",
+	"q_tx"."surveil",
+	"q_tx"."fee",
+	"q_tx"."charge",
+	"q_tx"."layer",
+	"q_tx"."layer_v",
+	"q_tx"."maxspeed",
+	"q_tx"."lockable",
+	"q_tx"."locked",
+	"q_tx"."surface",
+	"q_tx"."access",
+	"q_tx"."foot",
+	"q_tx"."horse",
+	"q_tx"."motor_veh",
+	"q_tx"."motorcar",
+	"q_tx"."motorcycle",
+	"q_tx"."vehicle",
+	(CASE
+		WHEN ("q_tx"."all_tags"->>("q_tx"."codes"->>'direction_attr') IS NULL) THEN "q_tx"."codes"->>'direction_default'
+		WHEN (("q_tx"."codes"->>'directions' IS NULL) OR ("q_tx"."codes"->>'directions' = '*') OR ("q_tx"."codes"->'directions' ? ("q_tx"."all_tags"->>("q_tx"."codes"->>'direction_attr')))) THEN "q_tx"."all_tags"->>("q_tx"."codes"->>'direction_attr')
+		ELSE NULL
+	END)::VARCHAR(16) AS "directn",
+	"q_tx"."directn_v",
+	("q_tx"."codes"->>'fclass')::VARCHAR(40) AS "fclass",
+	("q_tx"."codes"->>'qxcode')::INTEGER AS "qxcode",
+	("q_tx"."codes"->>'gfcode')::SMALLINT AS "code",
+	("q_tx"."codes"->>'carto_icon')::VARCHAR(64) AS "icon",
+	"q_tx"."geom"
+ FROM "qw_ti" AS "q_tx"
+ WHERE (
+	("q_tx"."codes"->>'fclass' IS NOT NULL)
+	AND ("q_tx"."geom" IS NOT NULL)
+);
+
+CREATE UNIQUE INDEX "qoxm_traffic_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" USING "btree" ("ogc_fid" ASC);
+CREATE UNIQUE INDEX "qoxm_traffic_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" USING "btree" ("osm_id" ASC NULLS LAST);
+CREATE UNIQUE INDEX "qoxm_traffic_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" USING "btree" ("osm_way_id" ASC NULLS LAST);
+CREATE INDEX "qoxm_traffic_code_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" USING "btree" ("code" ASC NULLS LAST);
+CREATE INDEX "qoxm_traffic_qxcode_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" USING "btree" ("qxcode" ASC);
+CREATE INDEX "qoxm_traffic_fclass_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" USING "btree" ("fclass" ASC);
+CREATE INDEX "qoxm_traffic_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_traffic" USING "gist" ("geom");
+
+CREATE MATERIALIZED VIEW "${OSM_DATA_TABLES_SCHEMA}"."qoxm_fuel" AS
+WITH "qw_mx" AS (SELECT
+	"tw1_po"."osm_id"::BIGINT,
+	NULL::BIGINT AS "osm_way_id",
+	"tw1_po"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	"tw1_po"."all_tags",
+	'N'::CHAR(1) AS "osmgeomsrc",
+	"tw1_po"."geom"::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS})
+ FROM "${OSM_DATA_TABLES_SCHEMA}"."points" AS "tw1_po"
+ WHERE (
+	COALESCE("tw1_po"."all_tags"->>'amenity', "tw1_po"."all_tags"->>'fuel') IS NOT NULL
+ )
+ UNION ALL
+ SELECT
+	NULL::BIGINT AS "osm_id",
+	"tw1_mp"."osm_way_id"::BIGINT,
+	"tw1_mp"."osm_timestamp"::TIMESTAMP AS "lastchange",
+	"tw1_mp"."all_tags",
+	'W'::CHAR(1) AS "osmgeomsrc",
+	ST_Centroid("tw1_mp"."geom")::GEOMETRY("MultiPoint", ${GEOM_STORE_SRS}) AS "geom"
+ FROM "${OSM_DATA_TABLES_SCHEMA}"."multipolygons" AS "tw1_mp"
+ WHERE (
+	COALESCE("tw1_mp"."all_tags"->>'amenity', "tw1_mp"."all_tags"->>'fuel') IS NOT NULL
+ )
+)
+SELECT
+	ROW_NUMBER() OVER (ORDER BY "q_fx"."osm_id" ASC NULLS LAST, "q_fx"."osm_way_id" ASC NULLS LAST) AS "ogc_fid",
+	"q_fx"."osm_id",
+	"q_fx"."osm_way_id",
+	"q_fx"."lastchange",
+	-- "q_fx"."all_tags",
+	("q_fx"."all_tags"->>'name')::VARCHAR(100) AS "name",
+	("q_fx"."all_tags"->>'name')::VARCHAR(32) AS "ref",
+	("q_fx"."all_tags"->>'notes')::VARCHAR(256) AS "notes",
+	("q_fx"."all_tags"->>'brand')::VARCHAR(100) AS "brand",
+	("q_fx"."all_tags"->>'operator')::VARCHAR(100) AS "operator",
+	("q_fx"."all_tags"->>'opening_hours')::VARCHAR(128) AS "openhrs",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'toilets' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'toilets' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "wc",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'compressed_air' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'compressed_air' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "comprs",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'vacuum_cleaner' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'vacuum_cleaner' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "vacuum",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fast_food' IN ('1', 'true', 'yes')) THEN true
+		WHEN ("q_fx"."all_tags"->>'shop' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'shop' IN ('1', 'true', yes', 'convenience', 'department_store', 'food', 'frozen_food', 'kiosk', 'supermarket')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "food",
+	("q_fx"."all_tags"->>'shop')::VARCHAR(32) AS "shop_v",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'car_wash' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'car_wash' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "wash",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'hgv' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'hgv' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "hgv",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'payment:cash' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'payment:cash' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "paycash",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:adblue' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:adblue' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_adbl",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:diesel' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:diesel' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_dsl",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:cng' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:cng' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_cng",
+	(CASE
+		WHEN (COALESCE("q_fx"."all_tags"->>'fuel:alcohol', "q_fx"."all_tags"->>'fuel:ethanol') IN ('0', 'false', 'no')) THEN false
+		WHEN (COALESCE("q_fx"."all_tags"->>'fuel:alcohol', "q_fx"."all_tags"->>'fuel:ethanol') IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_eth",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:ethanol_free' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:ethanol_free' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_noeth",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:lng' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:lng' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_lng",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:lpg' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:lpg' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_lpg",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:octane_95' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:octane_95' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_oct95",
+	(CASE
+		WHEN ("q_fx"."all_tags"->>'fuel:octane_98' IN ('0', 'false', 'no')) THEN false
+		WHEN ("q_fx"."all_tags"->>'fuel:octane_98' IN ('1', 'true', 'yes')) THEN true
+		ELSE NULL
+	END)::BOOLEAN AS "fuel_oct98",
+	'fuel'::VARCHAR(40) AS "fclass",
+	505250::INTEGER AS "qxcode",
+	5250::SMALLINT AS "code",
+	"q_fx"."osmgeomsrc",
+	"q_fx"."geom"
+ FROM "qw_mx" AS "q_fx"
+ WHERE (
+	("q_fx"."geom" IS NOT NULL)
+	AND ("q_fx"."all_tags"->>'amenity' = 'fuel')
+);
+
+CREATE UNIQUE INDEX "qoxm_fuel_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_fuel" USING "btree" ("ogc_fid" ASC);
+CREATE UNIQUE INDEX "qoxm_fuel_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_fuel" USING "btree" ("osm_id" ASC NULLS LAST);
+CREATE UNIQUE INDEX "qoxm_fuel_osm_way_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_fuel" USING "btree" ("osm_way_id" ASC NULLS LAST);
+CREATE INDEX "qoxm_fuel_geom_idx" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_fuel" USING "gist" ("geom");
+
+/*
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'hump') THEN '{"fclass": "", "qxcode": 505231, "gfcode": 5231, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'bump') THEN '{"fclass": "", "qxcode": 505232, "gfcode": 5232, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'table') THEN '{"fclass": "", "qxcode": 505233, "gfcode": 5233, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'chicane') THEN '{"fclass": "", "qxcode": 505234, "gfcode": 5234, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'cushion') THEN '{"fclass": "", "qxcode": 505235, "gfcode": 5235, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'markings') THEN '{"fclass": "", "qxcode": 605236, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'mini_bumps') THEN '{"fclass": "", "qxcode": 605237, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'rumble_strip') THEN '{"fclass": "", "qxcode": 605238, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'dip') THEN '{"fclass": "", "qxcode": 605239, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'double_dip') THEN '{"fclass": "", "qxcode": 605240, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'dynamic_bump') THEN '{"fclass": "", "qxcode": 605241, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'choker') THEN '{"fclass": "", "qxcode": 605242, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'island') THEN '{"fclass": "", "qxcode": 605243, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'choked_island') THEN '{"fclass": "", "qxcode": 605244, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'painted_island') THEN '{"fclass": "", "qxcode": 605245, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'choked_table') THEN '{"fclass": "", "qxcode": 605246, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' = 'painted_table') THEN '{"fclass": "", "qxcode": 605247, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": null}'
+		WHEN ("tw2_tx"."all_tags"->>'traffic_calming' IS NOT NULL) THEN '{"fclass": "", "qxcode": 505230, "gfcode": 5230, "direction_attr": null, "directions": [], "carto_icon": null}'
+*/
 
 COMMIT;
 
