@@ -562,6 +562,8 @@ SELECT
 		ELSE NULL
 	END)::SMALLINT AS "height",
 	("t_bu"."all_tags"->>'name')::VARCHAR(100) AS "name",
+	("t_bu"."all_tags"->>'addr:housenumber')::VARCHAR(16) AS "housenum",
+	COALESCE("t_bu"."all_tags"->>'addr:street', "t_bu"."all_tags"->>'addr:place')::VARCHAR(64) AS "street",
 	NULL AS "aal",
 	'W'::CHAR(1) AS "osmgeomsrc",
 	ST_MakeValid("t_bu"."geom", 'method=structure keepcollapsed=false')::GEOMETRY("MultiPolygon", ${GEOM_STORE_SRS}) AS "geom"
@@ -569,7 +571,7 @@ SELECT
  WHERE (
 	("t_bu"."all_tags"->>'building' IS NOT NULL)
 	AND ("t_bu"."all_tags"->>'building' ~ '[A-Za-z0-9]')
- );
+);
 
 CREATE UNIQUE INDEX "qoxm_buildings_a_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "btree" ("ogc_fid" ASC);
 CREATE UNIQUE INDEX "qoxm_buildings_a_osm_id_uniq" ON "${OSM_DATA_TABLES_SCHEMA}"."qoxm_buildings_a" USING "btree" ("osm_id" ASC);
@@ -786,6 +788,8 @@ WITH "qw_mx" AS (SELECT
 		WHEN ("tw2_px"."all_tags"->>'man_made' = 'water_works') THEN '{"qxcode": 502964, "gfcode": 2964, "carto_icon": null}'
 		ELSE NULL
 	END)::JSONB AS "codes",
+	("tw2_px"."all_tags"->>'addr:housenumber')::VARCHAR(16) AS "housenum",
+	COALESCE("tw2_px"."all_tags"->>'addr:street', "tw2_px"."all_tags"->>'addr:place')::VARCHAR(64) AS "street",
 	"tw2_px"."osmgeomsrc",
 	"tw2_px"."geom"
  FROM "qw_mx" AS "tw2_px"
@@ -974,6 +978,8 @@ SELECT
 		WHEN (("q_px"."codes"->>'qxcode')::INTEGER BETWEEN 502901 AND 502999) THEN 'miscpoi'
 		ELSE NULL
 	END)::VARCHAR(16) AS "fxcateg",
+	"q_px"."housenum",
+	"q_px"."street",
 	"q_px"."geom"
  FROM "qw_pi" AS "q_px"
  WHERE (
@@ -1181,6 +1187,7 @@ WITH "qw_mx" AS (SELECT
 	("tw2_tx"."all_tags"->>'name')::VARCHAR(32) AS "ref",
 	("tw2_tx"."all_tags"->>'notes')::VARCHAR(256) AS "notes",
 	("tw2_tx"."all_tags"->>'operator')::VARCHAR(256) AS "operator",
+	("tw2_tx"."all_tags"->>'capacity')::VARCHAR(256) AS "capacity",
 	("tw2_tx"."all_tags"->>'covered')::VARCHAR(256) AS "covered",
 	("tw2_tx"."all_tags"->>'maxstay')::VARCHAR(64) AS "maxstay",
 	("tw2_tx"."all_tags"->>'surveillance')::VARCHAR(16) AS "surveil",
@@ -1220,7 +1227,7 @@ WITH "qw_mx" AS (SELECT
 	LOWER("tw2_tx"."all_tags"->>'vehicle')::VARCHAR(16) AS "vehicle",
 	(CASE
 		WHEN ("tw2_tx"."all_tags"->>'highway' = 'traffic_signals') THEN '{"fclass": "traffic_signals", "qxcode": 505201, "gfcode": 5201, "direction_attr": "traffic_signals:direction", "directions": ["forward", "backward"], "carto_icon": "8/84/Traffic_light-16.svg"}'
-		WHEN ("tw2_tx"."all_tags"->>'highway' = 'mini_roundabout') THEN '{"fclass": "mini_roundabout", "qxcode": 505202, "gfcode": 5202, "direction_attr": "direction", "directions": ["anticlockwise", "clockwise"], "direction_default": 'clockwise', "carto_icon": "9/9b/Highway_mini_roundabout.svg"}'
+		WHEN ("tw2_tx"."all_tags"->>'highway' = 'mini_roundabout') THEN '{"fclass": "mini_roundabout", "qxcode": 505202, "gfcode": 5202, "direction_attr": "direction", "directions": ["anticlockwise", "clockwise"], "direction_default": "clockwise", "carto_icon": "9/9b/Highway_mini_roundabout.svg"}'
 		WHEN ("tw2_tx"."all_tags"->>'highway' = 'stop') THEN '{"fclass": "stop", "qxcode": 505203, "gfcode": 5203, "direction_attr": null, "directions": [], "carto_icon": null}'
 		WHEN ("tw2_tx"."all_tags"->>'highway' = 'crossing') THEN '{"fclass": "crossing", "qxcode": 505204, "gfcode": 5204, "direction_attr": null, "directions": [], "carto_icon": null}'
 		WHEN ("tw2_tx"."all_tags"->>'railway' = 'level_crossing') THEN '{"fclass": "rail_level_crossing", "qxcode": 605204, "gfcode": null, "direction_attr": null, "directions": [], "carto_icon": "f/f7/Level_crossing.svg"}'
@@ -1361,7 +1368,7 @@ SELECT
 	(CASE
 		WHEN ("q_fx"."all_tags"->>'fast_food' IN ('1', 'true', 'yes')) THEN true
 		WHEN ("q_fx"."all_tags"->>'shop' IN ('0', 'false', 'no')) THEN false
-		WHEN ("q_fx"."all_tags"->>'shop' IN ('1', 'true', yes', 'convenience', 'department_store', 'food', 'frozen_food', 'kiosk', 'supermarket')) THEN true
+		WHEN ("q_fx"."all_tags"->>'shop' IN ('1', 'true', 'yes', 'convenience', 'department_store', 'food', 'frozen_food', 'kiosk', 'supermarket')) THEN true
 		ELSE NULL
 	END)::BOOLEAN AS "food",
 	("q_fx"."all_tags"->>'shop')::VARCHAR(32) AS "shop_v",
@@ -1425,6 +1432,8 @@ SELECT
 		WHEN ("q_fx"."all_tags"->>'fuel:octane_98' IN ('1', 'true', 'yes')) THEN true
 		ELSE NULL
 	END)::BOOLEAN AS "fuel_oct98",
+	("q_fx"."all_tags"->>'addr:housenumber')::VARCHAR(16) AS "housenum",
+	COALESCE("q_fx"."all_tags"->>'addr:street', "q_fx"."all_tags"->>'addr:place')::VARCHAR(64) AS "street",
 	'fuel'::VARCHAR(40) AS "fclass",
 	505250::INTEGER AS "qxcode",
 	5250::SMALLINT AS "code",
